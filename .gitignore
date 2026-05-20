@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.venv/
+dist/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Logs
+*.log
+backend.log
+frontend.log
+
+# Environment
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+test.png
+
+# IDE
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Runtime data (auto-generated on first run)
+backend/data/chroma_db/
+backend/data/memory_db/
+backend/data/ai_learning/
+backend/data/ai_memory/
+backend/data/user_profile.json
+
+# AI Models (downloaded by start.sh)
+backend/models/
