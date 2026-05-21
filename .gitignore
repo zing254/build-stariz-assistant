@@ -37,3 +37,4 @@ backend/data/user_profile.json
 
 # AI Models (downloaded by start.sh)
 backend/models/
+.vercel
