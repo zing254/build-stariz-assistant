@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: stariz-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: STARIZ_MODEL
+        value: qwen3:4b
+      - key: OLLAMA_URL
+        value: https://ollama-server-url  # Replace with your Ollama server
+      - key: LOG_LEVEL
+        value: info
+    healthCheckPath: /health
+    autoDeploy: true

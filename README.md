@@ -4,6 +4,13 @@
 
 ---
 
+## 🚀 Live Demo
+
+- **Frontend**: https://build-stariz-assistant.vercel.app (Vercel — Free)
+- **Backend**: Deploy to Render (Free) — see [DEPLOYMENT.md](DEPLOYMENT.md)
+
+---
+
 ## What's New in v2.6.0
 
 - **AI Tool Execution**: AI parses `[TOOL:tool_name]{params}` from responses and executes tools iteratively
@@ -266,6 +273,17 @@ cd backend && python3 -m pytest test_stariz_tools.py -v
 
 ## Deployment
 
+### Free Options
+
+| Service | Tier | Cost | Use |
+|---------|------|------|-----|
+| **Vercel** | Hobby | $0 | Frontend (deployed) |
+| **Render** | Free | $0 | Backend (512MB RAM) |
+| **Koyeb** | Free | $0 | Backend alternative |
+| **Fly.io** | Free | $0 | Backend (requires CC) |
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step instructions.
+
 ### Docker (Full Stack)
 ```bash
 docker compose up -d
@@ -314,6 +332,19 @@ Includes: Backend + Ollama + Redis services
 ### Unauthorized (401)
 1. Set `STARIZ_API_TOKEN` in both backend and frontend
 2. Include `Authorization: Bearer <token>` header in requests
+
+---
+
+## Documentation
+
+| File | Description |
+|------|-------------|
+| [README.md](README.md) | Project overview and quick start |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Free deployment guide (Vercel + Render) |
+| [DOCUMENTATION.md](DOCUMENTATION.md) | Full technical documentation |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [SECURITY.md](SECURITY.md) | Security policy and best practices |
+| [.env.example](.env.example) | Environment variable template |
 
 ---
 
