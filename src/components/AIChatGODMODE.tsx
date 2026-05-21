@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader, Bot, User, Trash2, Copy, Check, Sparkles, Brain, Database, Clock, X } from 'lucide-react';
+import { Send, Loader, Bot, User, Trash2, Copy, Check, Sparkles, Brain, Database, Clock, X, Search, Info } from 'lucide-react';
+import { renderMarkdown } from '../utils/markdown.tsx';
 
 const BACKEND_URL = import.meta.env.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
 
@@ -15,7 +16,7 @@ interface SessionInfo {
   session_id: string;
   message_count: number;
   user_patterns: {
-    frequent_commands: string[];
+    frequent_commands: Array<{keyword: string; count: number}>;
     active_hours: number[];
     interaction_count: number;
   };
@@ -26,6 +27,8 @@ export default function AIChatGODMODE() {
   const [input, setInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [ragEnabled, setRagEnabled] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -76,6 +79,7 @@ export default function AIChatGODMODE() {
 
       const decoder = new TextDecoder();
       let assistantContent = '';
+      const assistantMsgIndex = messages.length;
 
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -98,9 +102,9 @@ export default function AIChatGODMODE() {
               assistantContent += data.chunk;
               setMessages(prev => {
                 const updated = [...prev];
-                const lastIdx = updated.length - 1;
-                if (updated[lastIdx]?.role === 'assistant') {
-                  updated[lastIdx] = { ...updated[lastIdx], content: assistantContent };
+                const idx = assistantMsgIndex;
+                if (updated[idx]?.role === 'assistant') {
+                  updated[idx] = { ...updated[idx], content: assistantContent };
                 }
                 return updated;
               });
@@ -120,7 +124,7 @@ export default function AIChatGODMODE() {
     }
 
     setIsGenerating(false);
-  }, [input, isGenerating, ragEnabled]);
+  }, [input, isGenerating, ragEnabled, messages.length]);
 
   const clearChat = async () => {
     try {
@@ -136,6 +140,10 @@ export default function AIChatGODMODE() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const filteredMessages = searchQuery
+    ? messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
+
   const suggestedPrompts = [
     "What can you do?",
     "Tell me about my usage patterns",
@@ -143,6 +151,8 @@ export default function AIChatGODMODE() {
     "What's my system status?",
     "Who created you?",
     "Help me organize my tasks",
+    "Show me my CPU and memory usage",
+    "What have we talked about before?",
   ];
 
   return (
@@ -174,10 +184,16 @@ export default function AIChatGODMODE() {
             RAG {ragEnabled ? 'ON' : 'OFF'}
           </button>
           <button
-            onClick={() => setShowInfo(!showInfo)}
-            className="p-1.5 rounded hover:bg-white/10 transition-all"
+            onClick={() => setShowSearch(!showSearch)}
+            className={`p-1.5 rounded transition-all ${showSearch ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'hover:bg-white/10 text-white/40'}`}
           >
-            <Clock className="w-4 h-4 text-white/40" />
+            <Search className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowInfo(!showInfo)}
+            className="p-1.5 rounded hover:bg-white/10 transition-all text-white/40"
+          >
+            <Info className="w-4 h-4" />
           </button>
           <button
             onClick={clearChat}
@@ -187,6 +203,34 @@ export default function AIChatGODMODE() {
           </button>
         </div>
       </div>
+
+      {/* Search Bar */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-white/10 bg-[#0a0a1a]/30 overflow-hidden"
+          >
+            <div className="p-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search messages..."
+                className="w-full bg-[#1a1a3a]/50 border border-white/10 rounded px-3 py-1.5 text-xs font-mono text-white placeholder:text-white/30 focus:border-[#00f0ff]/50 focus:outline-none"
+                autoFocus
+              />
+              {searchQuery && (
+                <p className="text-[10px] text-white/40 font-mono mt-1">
+                  {filteredMessages.length} of {messages.length} messages
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Session Info Panel */}
       <AnimatePresence>
@@ -214,9 +258,9 @@ export default function AIChatGODMODE() {
                 <div>
                   <span className="text-[10px] text-white/40 font-mono">Frequent Commands</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {sessionInfo.user_patterns.frequent_commands.map(cmd => (
-                      <span key={cmd} className="px-1.5 py-0.5 rounded bg-[#a855f7]/10 text-[#a855f7] text-[10px] font-mono">
-                        {cmd}
+                    {sessionInfo.user_patterns.frequent_commands.slice(0, 8).map(cmd => (
+                      <span key={cmd.keyword} className="px-1.5 py-0.5 rounded bg-[#a855f7]/10 text-[#a855f7] text-[10px] font-mono">
+                        {cmd.keyword} ({cmd.count})
                       </span>
                     ))}
                   </div>
@@ -227,6 +271,10 @@ export default function AIChatGODMODE() {
                 <span className="text-[10px] text-white/60 font-mono">
                   {sessionInfo.user_patterns.active_hours.map(h => `${h}:00`).join(', ')}
                 </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-white/40 font-mono">Model</span>
+                <span className="text-[10px] text-[#00ff88] font-mono">{sessionInfo.model || 'qwen3:4b'}</span>
               </div>
             </div>
           </motion.div>
@@ -256,7 +304,7 @@ export default function AIChatGODMODE() {
           </div>
         )}
 
-        {messages.map((msg, i) => (
+        {filteredMessages.map((msg, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 10 }}
@@ -273,7 +321,13 @@ export default function AIChatGODMODE() {
                 ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/20'
                 : 'bg-[#1a1a3a]/50 border border-white/5'
             }`}>
-              <div className="text-sm font-mono text-white whitespace-pre-wrap">{msg.content}</div>
+              {msg.role === 'assistant' ? (
+                <div className="text-sm text-white markdown-content">
+                  {renderMarkdown(msg.content)}
+                </div>
+              ) : (
+                <div className="text-sm font-mono text-white whitespace-pre-wrap">{msg.content}</div>
+              )}
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[9px] text-white/20 font-mono">
                   {new Date(msg.timestamp).toLocaleTimeString()}

@@ -21,8 +21,13 @@ export function VoiceVisualizer({ isActive, mode = 'bars', color = '#00f0ff' }: 
     let dataArray: Uint8Array;
     let stream: MediaStream | null = null;
     let audioContext: AudioContext | null = null;
+    let cancelled = false;
 
     navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => {
+      if (cancelled) {
+        s.getTracks().forEach(t => t.stop());
+        return;
+      }
       stream = s;
       audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
@@ -32,17 +37,17 @@ export function VoiceVisualizer({ isActive, mode = 'bars', color = '#00f0ff' }: 
       dataArray = new Uint8Array(analyser.frequencyBinCount);
 
       const updateLevel = () => {
-        if (analyser) {
-          analyser.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-          setAudioLevel(average / 255);
-        }
+        if (cancelled || !analyser) return;
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        setAudioLevel(average / 255);
         animFrameRef.current = requestAnimationFrame(updateLevel);
       };
       updateLevel();
     }).catch(() => {});
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(animFrameRef.current);
       stream?.getTracks().forEach(t => t.stop());
       audioContext?.close();

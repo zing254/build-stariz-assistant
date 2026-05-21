@@ -15,6 +15,24 @@ import io
 class FileTools:
     """Tools for file system operations."""
 
+    ALLOWED_BASE_DIRS = [
+        Path.home(),
+        Path("/tmp"),
+        Path("/var/tmp"),
+    ]
+
+    @classmethod
+    def _validate_path(cls, path: str) -> tuple[bool, str]:
+        """Validate that path is within allowed directories."""
+        try:
+            resolved = Path(path).resolve()
+            for base in cls.ALLOWED_BASE_DIRS:
+                if str(resolved).startswith(str(base.resolve())):
+                    return True, ""
+            return False, f"Access denied: path outside allowed directories ({path})"
+        except Exception as e:
+            return False, f"Path validation error: {str(e)}"
+
     @staticmethod
     def list_directory(path: str) -> Dict[str, Any]:
         """List contents of a directory."""

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { formatTime, formatDate, getGreeting } from '../utils/helpers';
-import { Cpu, Wifi, Battery, Volume2, Bell, Search, Mic, Menu } from 'lucide-react';
+import { Cpu, Wifi, Battery, Volume2, Bell, Search, Mic, Menu, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { usePythonBackend } from '../hooks/usePythonBackend';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -11,8 +13,11 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const [time, setTime] = useState(new Date());
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [cpuUsage, setCpuUsage] = useState(12);
-  const [battery, setBattery] = useState(87);
+  const { systemStats } = usePythonBackend();
+  const [theme, setTheme] = useLocalStorage('stariz-theme', 'dark');
+
+  const cpuUsage = systemStats?.cpu_percent ?? 0;
+  const memoryPercent = systemStats?.memory?.percent ?? 0;
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -20,12 +25,11 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCpuUsage(Math.floor(Math.random() * 30) + 5);
-      setBattery((prev) => Math.max(0, Math.min(100, prev + (Math.random() > 0.7 ? -1 : 0))));
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,10 +103,17 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <Wifi className="w-3.5 h-3.5" />
           <span>ONLINE</span>
         </div>
-        <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-[#00ff88]/70">
+        <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-[#a855f7]/70">
           <Battery className="w-3.5 h-3.5" />
-          <span>{battery}%</span>
+          <span>{memoryPercent}% RAM</span>
         </div>
+        <button
+          onClick={toggleTheme}
+          className="hidden md:flex items-center gap-1.5 p-1.5 rounded border border-[#1a1a3a] text-[#ffcc00]/70 hover:text-[#ffcc00] hover:border-[#ffcc00]/30 transition-all"
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        >
+          {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+        </button>
         <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-[#a855f7]/70">
           <Volume2 className="w-3.5 h-3.5" />
         </div>

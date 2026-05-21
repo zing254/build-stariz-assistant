@@ -103,11 +103,14 @@ function KeyboardHelp({ onClose }: { onClose: () => void }) {
 }
 
 /* ─── Simple view wrappers ─── */
-const wrapView = (Component: React.FC, maxWidth = 'max-w-2xl') => () => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4 flex justify-center">
-    <div className={`w-full ${maxWidth} h-full`}><Component /></div>
-  </motion.div>
-);
+const wrapView = (Component: React.FC, maxWidth = 'max-w-2xl') => {
+  const Wrapped = () => (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4 flex justify-center">
+      <div className={`w-full ${maxWidth} h-full`}><Component /></div>
+    </motion.div>
+  );
+  return Wrapped;
+};
 
 const TerminalView = () => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">

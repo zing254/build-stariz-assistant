@@ -1,8 +1,8 @@
-# STARIZ AI Assistant - Multi-stage Docker Build
+# STARIZ AI Assistant - Production Docker Build
 # Stage 1: Build the frontend
 FROM node:20-alpine as frontend-builder
 
-WORKDIR /app/frontend
+WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
@@ -12,58 +12,63 @@ COPY package-lock.json* ./
 RUN npm ci || npm install
 
 # Copy frontend source
-COPY . .
+COPY src/ ./src/
+COPY public/ ./public/
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig*.json ./
 
 # Build the frontend
 RUN npm run build
 
-# Stage 2: Build the Python backend
+# Stage 2: Python backend with dependencies
 FROM python:3.12-slim as backend-builder
-
-WORKDIR /app/backend
-
-# Install Python dependencies
-COPY backend/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy backend source
-COPY backend/ ./
-
-# Stage 3: Production setup
-FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies needed for Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ make cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# Stage 3: Production runtime
+FROM python:3.12-slim
+
+LABEL maintainer="Zingri_Master"
+LABEL description="STARIZ AI Assistant - Production"
+
+WORKDIR /app
+
+# Install runtime system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy backend from builder
-COPY --from=backend-builder /app/backend ./backend
-COPY --from=backend-builder /usr/local/lib/python3.12/site-packages ./venv/lib/python3.12/site-packages
+# Copy Python packages from builder
+COPY --from=backend-builder /install /usr/local
+
+# Copy backend source
+COPY backend/ ./backend/
 
 # Copy frontend build from builder
-COPY --from=frontend-builder /app/dist ./frontend
-
-# Copy package files for any additional setup
-COPY package*.json ./
+COPY --from=frontend-builder /app/dist ./dist/
 
 # Set environment variables
 ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
+ENV STARIZ_MODEL=qwen3:4b
+ENV NODE_ENV=production
 
-# Expose ports
+# Expose port
 EXPOSE 8000
-EXPOSE 3000
 
-# Create startup script
-RUN echo '#!/bin/sh\n\
-cd /app/backend\n\
-python main.py &\n\
-cd /app/frontend\n\
-npx serve -s . -l 3000 &\n\
-wait' > /app/start.sh && chmod +x /app/start.sh
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Default command
-CMD ["/app/start.sh"]
+# Start the application
+CMD ["python", "backend/main.py"]

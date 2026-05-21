@@ -100,7 +100,7 @@ export class AIService {
     if (!isOnline || (ollamaAvailable && !this.currentApiConfig)) {
       try {
         const response = await this.ollama.generateResponse(
-          'llama2:7b', // Default model, could be configurable
+          'qwen3:4b',
           prompt,
           systemPrompt,
           temperature
@@ -134,7 +134,7 @@ export class AIService {
     if (ollamaAvailable) {
       try {
         const response = await this.ollama.generateResponse(
-          'llama2:7b',
+          'qwen3:4b',
           prompt,
           systemPrompt,
           temperature
@@ -303,7 +303,7 @@ export class AIService {
     // Prefer Ollama when offline
     if (!isOnline || (ollamaAvailable && !this.currentApiConfig)) {
       this.ollama.generateStreamingResponse(
-        'llama2:7b',
+        'qwen3:4b',
         prompt,
         systemPrompt,
         temperature,
@@ -343,7 +343,7 @@ export class AIService {
     // Last resort: try Ollama
     if (ollamaAvailable) {
       this.ollama.generateStreamingResponse(
-        'llama2:7b',
+        'qwen3:4b',
         prompt,
         systemPrompt,
         temperature,

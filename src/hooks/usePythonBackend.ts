@@ -41,7 +41,7 @@ interface UsePythonBackendReturn {
   callTool: (tool: string, params: any) => Promise<any>;
 }
 
-const BACKEND_URL = (import.meta as any).env?.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
+const BACKEND_URL = import.meta.env?.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
 const WS_URL = BACKEND_URL.replace('http', 'ws');
 
 export function usePythonBackend(): UsePythonBackendReturn {
@@ -114,15 +114,28 @@ export function usePythonBackend(): UsePythonBackendReturn {
     }
   }, []);
 
+  const getEndpoints = useCallback((tool: string): { method: string; url: string; body?: any } => {
+    const getEndpoints = new Set([
+      'system/info', 'system/cpu', 'system/memory', 'system/disk',
+      'system/network', 'system/processes', 'image/to-base64',
+    ]);
+    const url = `${BACKEND_URL}/api/tools/${tool}`;
+    if (getEndpoints.has(tool)) {
+      const queryString = Object.keys(params).length
+        ? '?' + new URLSearchParams(params).toString()
+        : '';
+      return { method: 'GET', url: url + queryString };
+    }
+    return { method: 'POST', url, body: JSON.stringify(params) };
+  }, []);
+
   const callTool = useCallback(async (tool: string, params: any = {}): Promise<any> => {
     try {
-      const url = `${BACKEND_URL}/api/tools/${tool}`;
+      const { method, url, body } = getEndpoints(tool);
       const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(params),
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        ...(body ? { body } : {}),
       });
 
       if (!response.ok) {
@@ -134,7 +147,7 @@ export function usePythonBackend(): UsePythonBackendReturn {
       console.error(`Error calling tool ${tool}:`, error);
       throw error;
     }
-  }, []);
+  }, [getEndpoints]);
 
   useEffect(() => {
     connect();

@@ -8,9 +8,11 @@ import sys
 import json
 import asyncio
 import logging
+import time
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime
+from collections import defaultdict
 
 import psutil
 from fastapi import (
@@ -48,11 +50,48 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Rate limiting
+rate_limit_store: Dict[str, list] = defaultdict(list)
+RATE_LIMIT_MAX = 60
+RATE_LIMIT_WINDOW = 60
+
+@app.middleware("http")
+async def rate_limit_middleware(request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+
+    rate_limit_store[client_ip] = [t for t in rate_limit_store[client_ip] if t > window_start]
+
+    if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX:
+        return JSONResponse(status_code=429, content={"error": "Rate limit exceeded"})
+
+    rate_limit_store[client_ip].append(now)
+    response = await call_next(request)
+    return response
+
+# Basic authentication (optional, disabled by default)
+API_TOKEN = os.environ.get("STARIZ_API_TOKEN", "")
+
+@app.middleware("http")
+async def auth_middleware(request, call_next):
+    if not API_TOKEN:
+        return await call_next(request)
+
+    if request.url.path in ["/", "/health", "/docs", "/openapi.json"]:
+        return await call_next(request)
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header != f"Bearer {API_TOKEN}":
+        return JSONResponse(status_code=401, content={"error": "Unauthorized"})
+
+    return await call_next(request)
 
 # System stats cache
 system_stats_cache = {
@@ -534,8 +573,18 @@ async def voice_list():
 async def voice_status():
     """Check voice engine status."""
     from stariz_tools.voice_tools import VoiceTools, VOSK_MODEL_PATH, PIPER_MODEL_PATH
-    stt_ready = VoiceTools._vosk_model is not None or VoiceTools.init_stt()
-    tts_ready = VoiceTools._piper_voice is not None or VoiceTools.init_tts()
+    stt_ready = VoiceTools._vosk_model is not None
+    if not stt_ready:
+        try:
+            stt_ready = VoiceTools.init_stt()
+        except Exception:
+            stt_ready = False
+    tts_ready = VoiceTools._piper_voice is not None
+    if not tts_ready:
+        try:
+            tts_ready = VoiceTools.init_tts()
+        except Exception:
+            tts_ready = False
     return {
         "stt": "ready" if stt_ready else "not initialized",
         "tts": "ready" if tts_ready else "not initialized",
@@ -709,18 +758,18 @@ async def agent_execute(request: AgentExecuteRequest):
     agent = ReActAgent(tool_registry=tool_registry, max_iterations=request.max_iterations)
 
     def llm_call(prompt: str) -> str:
-        import httpx
         try:
-            resp = httpx.post(
-                "http://localhost:11434/api/generate",
-                json={"model": "qwen3:4b", "prompt": prompt, "stream": False},
-                timeout=120
-            )
-            return resp.json().get("response", "")
+            import httpx as _httpx
+            with _httpx.Client(timeout=120) as _client:
+                resp = _client.post(
+                    "http://localhost:11434/api/chat",
+                    json={"model": "qwen3:4b", "messages": [{"role": "user", "content": prompt}], "stream": False},
+                )
+                return resp.json().get("message", {}).get("content", "")
         except Exception as e:
             return f"LLM error: {e}"
 
-    result = agent.execute(request.task, llm_call)
+    result = await asyncio.to_thread(agent.execute, request.task, llm_call)
     return result
 
 # --- Memory API ---
@@ -971,7 +1020,8 @@ async def startup_event():
 
         # Autonomous Learning Engine
         try:
-            from stariz_tools.autonomous_learning import AutonomousLearningEngine, background_learning_task
+            from stariz_tools.autonomous_learning import AutonomousLearningEngine
+            from stariz_tools.autonomous_learning import background_learning_task
             learning_engine = AutonomousLearningEngine()
             asyncio.create_task(background_learning_task())
             logger.info("Autonomous Learning Engine started")
@@ -1016,6 +1066,12 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("STARIZ AI Backend shutting down...")
+
+
+# Serve frontend static files in production
+frontend_dist = Path(__file__).parent.parent / "dist"
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
 
 
 if __name__ == "__main__":

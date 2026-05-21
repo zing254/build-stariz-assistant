@@ -57,12 +57,14 @@ class VoiceTools:
             return ""
         cls._vosk_recognizer.Reset()
         try:
-            audio_np, sr = sf.read(io.BytesIO(audio_bytes), dtype='float32')
-            if audio_np.ndim > 1:
-                audio_np = audio_np.mean(axis=1)
-            if sr != 16000:
-                audio_np = signal.resample_poly(audio_np, 16000, sr)
-            audio_16bit = (audio_np * 32767).astype(np.int16).tobytes()
+            audio_16bit = audio_bytes
+            if not cls._is_raw_pcm(audio_bytes):
+                audio_np, sr = sf.read(io.BytesIO(audio_bytes), dtype='float32')
+                if audio_np.ndim > 1:
+                    audio_np = audio_np.mean(axis=1)
+                if sr != 16000:
+                    audio_np = signal.resample_poly(audio_np, 16000, sr)
+                audio_16bit = (audio_np * 32767).astype(np.int16).tobytes()
             if cls._vosk_recognizer.AcceptWaveform(audio_16bit):
                 result = json.loads(cls._vosk_recognizer.Result())
             else:
@@ -71,6 +73,13 @@ class VoiceTools:
         except Exception as e:
             logger.error(f"Transcription error: {e}")
             return ""
+
+    @classmethod
+    def _is_raw_pcm(cls, data: bytes) -> bool:
+        """Detect if data is raw PCM (no WAV header)."""
+        if len(data) < 44:
+            return True
+        return data[:4] != b'RIFF'
 
     @classmethod
     def transcribe_chunk(cls, audio_chunk: bytes) -> Dict[str, Any]:

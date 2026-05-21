@@ -79,15 +79,17 @@ export class OllamaService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
+      const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model,
-          prompt,
-          system,
+          messages: [
+            ...(system ? [{ role: 'system', content: system }] : []),
+            { role: 'user', content: prompt },
+          ],
           temperature,
           stream: false,
         }),
@@ -97,7 +99,19 @@ export class OllamaService {
         throw new Error(`Ollama API error: ${response.status}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return {
+        model: data.model,
+        created_at: data.created_at,
+        response: data.message?.content || '',
+        done: true,
+        prompt_eval_count: data.prompt_eval_count,
+        eval_count: data.eval_count,
+        total_duration: data.total_duration,
+        load_duration: data.load_duration,
+        prompt_eval_duration: data.prompt_eval_duration,
+        eval_duration: data.eval_duration,
+      };
     } catch (error) {
       console.error('Ollama generation error:', error);
       throw error;
@@ -122,15 +136,17 @@ export class OllamaService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
+      const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model,
-          prompt,
-          system,
+          messages: [
+            ...(system ? [{ role: 'system', content: system }] : []),
+            { role: 'user', content: prompt },
+          ],
           temperature,
           stream: true,
         }),
@@ -162,9 +178,9 @@ export class OllamaService {
             if (line.trim()) {
               try {
                 const parsed = JSON.parse(line);
-                if (parsed.response) {
-                  onToken(parsed.response);
-                  accumulatedResponse += parsed.response;
+                if (parsed.message?.content) {
+                  onToken(parsed.message.content);
+                  accumulatedResponse += parsed.message.content;
                 }
                 if (parsed.done) {
                   onComplete({

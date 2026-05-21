@@ -27,7 +27,14 @@ export function useOfflineVoice(backendUrl: string = 'http://localhost:8000'): U
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+
   const connectVoiceWS = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
+      return wsRef.current;
+    }
+
     const wsUrl = backendUrl.replace('http', 'ws');
     const ws = new WebSocket(`${wsUrl}/ws/voice/${Date.now()}`);
     ws.binaryType = 'arraybuffer';
@@ -35,6 +42,7 @@ export function useOfflineVoice(backendUrl: string = 'http://localhost:8000'): U
     ws.onopen = () => {
       setIsInitialized(true);
       setError(null);
+      reconnectAttemptsRef.current = 0;
     };
 
     ws.onmessage = (event) => {
@@ -70,16 +78,23 @@ export function useOfflineVoice(backendUrl: string = 'http://localhost:8000'): U
 
     ws.onerror = () => {
       setError('Voice WebSocket connection failed');
-      setIsInitialized(false);
     };
 
     ws.onclose = () => {
       setIsInitialized(false);
+      // Auto-reconnect if still listening
+      if (isListening && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        reconnectAttemptsRef.current += 1;
+        const delay = Math.min(1000 * reconnectAttemptsRef.current, 5000);
+        setTimeout(() => {
+          if (isListening) connectVoiceWS();
+        }, delay);
+      }
     };
 
     wsRef.current = ws;
     return ws;
-  }, [backendUrl]);
+  }, [backendUrl, isListening]);
 
   const startListening = useCallback(async () => {
     try {

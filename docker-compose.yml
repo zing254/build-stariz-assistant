@@ -1,45 +1,48 @@
 version: '3.8'
 
 services:
-  # Python Backend Service
+  # Ollama AI Model Server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: stariz-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Python Backend Service (Production)
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: backend-builder
     container_name: stariz-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app
       - ./data:/app/data
+      - ./backend/stariz_tools/data:/app/backend/stariz_tools/data
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=info
-    command: python main.py
+      - STARIZ_MODEL=qwen3:4b
+      - OLLAMA_URL=http://ollama:11434
     restart: unless-stopped
+    depends_on:
+      - ollama
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
-
-  # Frontend Service (Development)
-  frontend:
-    image: node:20-alpine
-    container_name: stariz-frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- -- --host 0.0.0.0"
-    restart: unless-stopped
-    depends_on:
-      backend:
-        condition: service_healthy
+      start_period: 60s
 
   # Redis for caching and sessions (optional)
   redis:
@@ -54,3 +57,4 @@ services:
 
 volumes:
   redis_data:
+  ollama_data:

@@ -28,6 +28,7 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const commands: CommandItem[] = [
     // Navigation
@@ -80,6 +81,31 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const first = focusable[0] as HTMLElement;
+        const last = focusable[focusable.length - 1] as HTMLElement;
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  useEffect(() => {
     setSelectedIndex(0);
   }, [query]);
 
@@ -124,8 +150,12 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[20vh]"
           onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command Palette"
         >
           <motion.div
+            ref={modalRef}
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -133,6 +163,8 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
             className="w-full max-w-2xl bg-[#0f0f2a] border border-[#1a1a3a] rounded-2xl shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
             onKeyDown={handleKeyDown}
+            role="dialog"
+            aria-label="Command palette search and navigation"
           >
             {/* Search Input */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[#1a1a3a]">
@@ -144,8 +176,10 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Type a command or search..."
                 className="flex-1 bg-transparent text-sm font-mono text-white placeholder:text-white/30 focus:outline-none"
+                aria-label="Search commands"
+                aria-describedby="command-palette-help"
               />
-              <div className="flex items-center gap-1 text-[10px] font-mono text-white/30">
+              <div id="command-palette-help" className="flex items-center gap-1 text-[10px] font-mono text-white/30">
                 <kbd className="px-1.5 py-0.5 rounded bg-[#1a1a3a]">ESC</kbd>
                 <span>to close</span>
               </div>
@@ -163,12 +197,13 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
                      const isSelected = globalIdx === selectedIndex;
                      const IconComponent = cmd.icon;
 
-                    return (
-                      <motion.button
-                        key={cmd.id}
-                        whileHover={{ x: 2 }}
-                        onClick={() => { cmd.action(); onClose(); }}
-                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all ${
+                     return (
+                       <motion.button
+                         key={cmd.id}
+                         whileHover={{ x: 2 }}
+                         onClick={() => { cmd.action(); onClose(); }}
+                         aria-label={`${cmd.label}${cmd.description ? ` - ${cmd.description}` : ''}`}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-all ${
                            isSelected ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/20' : 'hover:bg-[#1a1a3a]/50'
                          }`}
                        >
