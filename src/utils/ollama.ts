@@ -1,4 +1,4 @@
-import { ApiConfig } from './ApiKeyManager';
+import { ApiConfig } from '../components/ApiKeyManager';
 
 interface OllamaModel {
   name: string;
@@ -6,7 +6,7 @@ interface OllamaModel {
   modified: string;
 }
 
-interface OllamaGenerateResponse {
+export interface OllamaGenerateResponse {
   model: string;
   created_at: string;
   response: string;
@@ -30,9 +30,12 @@ export class OllamaService {
 
   async checkAvailability(): Promise<boolean> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
       const response = await fetch(`${this.baseUrl}/api/tags`, {
-        timeout: 2000,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       this.isAvailable = response.ok;
       return this.isAvailable;
     } catch (error) {
@@ -121,8 +124,8 @@ export class OllamaService {
   async generateStreamingResponse(
     model: string,
     prompt: string,
-    system?: string,
-    temperature: number = 0.7,
+    system: string | undefined,
+    temperature: number,
     onToken: (token: string) => void,
     onComplete: (response: OllamaGenerateResponse) => void,
     onError: (error: Error) => void
@@ -208,7 +211,7 @@ export class OllamaService {
         reader.releaseLock();
       }
     } catch (error) {
-      onError(error);
+      onError(error instanceof Error ? error : new Error(String(error)));
     }
   }
 

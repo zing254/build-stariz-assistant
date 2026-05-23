@@ -102,7 +102,7 @@ describe('Helper Functions', () => {
   it('should get correct greeting', () => {
     const morningDate = new Date(2024, 0, 1, 9, 0, 0);
     const originalDate = global.Date;
-    global.Date = jest.fn(() => morningDate) as any;
+    global.Date = vi.fn(() => morningDate) as any;
     global.Date.prototype = originalDate.prototype;
     expect(getGreeting()).toBe('Good Morning');
     global.Date = originalDate;

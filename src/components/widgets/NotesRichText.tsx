@@ -178,7 +178,7 @@ export default function NotesRichTextWidget() {
                 </span>
               </div>
               <p className="text-[9px] font-mono text-white/30 line-clamp-2">
-                {note.content.replace(/[#*`>-\n]/g, '').slice(0, 60)}...
+                {note.content.replace(/[#*`>\n-]/g, '').slice(0, 60)}...
               </p>
             </motion.button>
           ))}

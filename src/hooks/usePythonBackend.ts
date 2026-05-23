@@ -114,7 +114,7 @@ export function usePythonBackend(): UsePythonBackendReturn {
     }
   }, []);
 
-  const getEndpoints = useCallback((tool: string): { method: string; url: string; body?: any } => {
+  const getEndpoints = useCallback((tool: string, params: Record<string, string> = {}): { method: string; url: string; body?: string } => {
     const getEndpoints = new Set([
       'system/info', 'system/cpu', 'system/memory', 'system/disk',
       'system/network', 'system/processes', 'image/to-base64',
@@ -131,7 +131,7 @@ export function usePythonBackend(): UsePythonBackendReturn {
 
   const callTool = useCallback(async (tool: string, params: any = {}): Promise<any> => {
     try {
-      const { method, url, body } = getEndpoints(tool);
+      const { method, url, body } = getEndpoints(tool, params);
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },

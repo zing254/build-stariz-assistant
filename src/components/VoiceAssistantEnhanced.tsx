@@ -291,7 +291,17 @@ export default function VoiceAssistantEnhanced() {
       try {
         const match = input.match(/(\d+\.?\d*)\s*([\+\-\*\/])\s*(\d+\.?\d*)/);
         if (match) {
-          const result = eval(match[0]);
+          const a = parseFloat(match[1]);
+          const op = match[2];
+          const b = parseFloat(match[3]);
+          let result: number;
+          switch (op) {
+            case '+': result = a + b; break;
+            case '-': result = a - b; break;
+            case '*': result = a * b; break;
+            case '/': result = b !== 0 ? a / b : 0; break;
+            default: result = 0;
+          }
           return `The result is ${result}.`;
         }
       } catch {}

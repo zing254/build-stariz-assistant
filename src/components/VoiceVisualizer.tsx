@@ -38,8 +38,8 @@ export function VoiceVisualizer({ isActive, mode = 'bars', color = '#00f0ff' }: 
 
       const updateLevel = () => {
         if (cancelled || !analyser) return;
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        analyser.getByteFrequencyData(dataArray as any);
+        const average = Array.from(dataArray).reduce((a, b) => a + b, 0) / dataArray.length;
         setAudioLevel(average / 255);
         animFrameRef.current = requestAnimationFrame(updateLevel);
       };

@@ -16,8 +16,20 @@ class CommandRouter:
     """Routes natural language commands to dashboard actions."""
 
     WIDGET_COMMANDS = {
+        "memory": {
+            "keywords": ["memory", "memories", "remember", "past", "previous", "recall", "history"],
+            "action": "navigate",
+            "target": "memory",
+            "response": "Opening Memory System...",
+        },
+        "agent": {
+            "keywords": ["agent", "autonomous", "automate", "do it for me", "execute", "run task"],
+            "action": "navigate",
+            "target": "agent",
+            "response": "Opening Agent Loop...",
+        },
         "system": {
-            "keywords": ["system", "cpu", "memory", "ram", "disk", "stats", "status", "performance", "monitor", "resource", "analytics", "chart", "graph", "usage", "load"],
+            "keywords": ["system", "cpu", "ram", "disk", "stats", "status", "performance", "monitor", "resource", "analytics", "chart", "graph", "usage", "load"],
             "action": "navigate",
             "target": "system",
             "response": "Opening System Monitor...",
@@ -46,6 +58,54 @@ class CommandRouter:
             "target": "calendar",
             "response": "Opening Calendar...",
         },
+        "journal": {
+            "keywords": ["journal", "diary", "entry", "log", "daily"],
+            "action": "navigate",
+            "target": "journal",
+            "response": "Opening Journal...",
+        },
+        "crypto": {
+            "keywords": ["crypto", "bitcoin", "ethereum", "price", "btc", "eth", "coin", "blockchain"],
+            "action": "navigate",
+            "target": "crypto",
+            "response": "Opening Crypto Prices...",
+        },
+        "knowledge": {
+            "keywords": ["knowledge", "search docs", "search documents", "rag", "find in knowledge", "knowledge base"],
+            "action": "navigate",
+            "target": "knowledge",
+            "response": "Opening Knowledge Base...",
+        },
+        "voice": {
+            "keywords": ["voice", "speak", "talk", "listen", "ambient", "speech", "microphone"],
+            "action": "navigate",
+            "target": "voice",
+            "response": "Opening Voice Assistant...",
+        },
+        "godmode": {
+            "keywords": ["godmode", "god mode", "full ai", "stariz"],
+            "action": "navigate",
+            "target": "chat",
+            "response": "Opening STARIZ GODMODE...",
+        },
+        "chat": {
+            "keywords": ["chat", "ai chat", "talk to ai", "conversation", "ask"],
+            "action": "navigate",
+            "target": "chat",
+            "response": "Opening AI Chat...",
+        },
+        "settings": {
+            "keywords": ["settings", "config", "configuration", "preferences", "options", "setup"],
+            "action": "navigate",
+            "target": "settings",
+            "response": "Opening Settings...",
+        },
+        "dashboard": {
+            "keywords": ["dashboard", "home", "main", "overview", "start"],
+            "action": "navigate",
+            "target": "dashboard",
+            "response": "Going to Dashboard...",
+        },
         "tasks": {
             "keywords": ["task", "tasks", "todo", "to-do", "checklist", "project", "work"],
             "action": "navigate",
@@ -58,23 +118,11 @@ class CommandRouter:
             "target": "dashboard",
             "response": "Opening Notes widget...",
         },
-        "journal": {
-            "keywords": ["journal", "diary", "entry", "log", "daily"],
-            "action": "navigate",
-            "target": "journal",
-            "response": "Opening Journal...",
-        },
         "weather": {
             "keywords": ["weather", "temperature", "forecast", "rain", "sun", "cloud", "climate"],
             "action": "navigate",
             "target": "dashboard",
             "response": "Checking Weather widget...",
-        },
-        "crypto": {
-            "keywords": ["crypto", "bitcoin", "ethereum", "price", "btc", "eth", "coin", "blockchain"],
-            "action": "navigate",
-            "target": "crypto",
-            "response": "Opening Crypto Prices...",
         },
         "whiteboard": {
             "keywords": ["whiteboard", "draw", "sketch", "canvas", "paint", "diagram"],
@@ -88,53 +136,107 @@ class CommandRouter:
             "target": "dashboard",
             "response": "Opening Music Player...",
         },
-        "settings": {
-            "keywords": ["settings", "config", "configuration", "preferences", "options", "setup"],
-            "action": "navigate",
-            "target": "settings",
-            "response": "Opening Settings...",
-        },
-        "knowledge": {
-            "keywords": ["knowledge", "search docs", "search documents", "rag", "find in knowledge", "knowledge base"],
-            "action": "navigate",
-            "target": "knowledge",
-            "response": "Opening Knowledge Base...",
-        },
-        "memory": {
-            "keywords": ["memory", "remember", "past", "previous", "recall", "history"],
-            "action": "navigate",
-            "target": "memory",
-            "response": "Opening Memory System...",
-        },
-        "agent": {
-            "keywords": ["agent", "autonomous", "automate", "do it for me", "execute", "run task"],
-            "action": "navigate",
-            "target": "agent",
-            "response": "Opening Agent Loop...",
-        },
-        "voice": {
-            "keywords": ["voice", "speak", "talk", "listen", "ambient", "speech", "microphone"],
-            "action": "navigate",
-            "target": "voice",
-            "response": "Opening Voice Assistant...",
-        },
         "plugins": {
             "keywords": ["plugin", "plugins", "extension", "add-on", "module"],
             "action": "navigate",
             "target": "plugins",
             "response": "Opening Plugin Manager...",
         },
-        "dashboard": {
-            "keywords": ["dashboard", "home", "main", "overview", "start"],
+        "pomodoro": {
+            "keywords": ["pomodoro", "focus", "timer", "work session", "break"],
             "action": "navigate",
-            "target": "dashboard",
-            "response": "Going to Dashboard...",
+            "target": "pomodoro",
+            "response": "Opening Pomodoro Timer...",
         },
-        "chat": {
-            "keywords": ["chat", "ai chat", "talk to ai", "conversation", "ask"],
+        "stopwatch": {
+            "keywords": ["stopwatch", "lap", "countdown", "timing"],
             "action": "navigate",
-            "target": "chat",
-            "response": "Opening AI Chat...",
+            "target": "stopwatch",
+            "response": "Opening Stopwatch...",
+        },
+        "password": {
+            "keywords": ["password", "generate password", "secure", "random password"],
+            "action": "navigate",
+            "target": "password",
+            "response": "Opening Password Generator...",
+        },
+        "converter": {
+            "keywords": ["convert", "unit", "measurement", "converter"],
+            "action": "navigate",
+            "target": "converter",
+            "response": "Opening Unit Converter...",
+        },
+        "color": {
+            "keywords": ["color", "colour", "hex", "rgb", "palette"],
+            "action": "navigate",
+            "target": "color",
+            "response": "Opening Color Picker...",
+        },
+        "json": {
+            "keywords": ["json", "format json", "validate json", "json formatter"],
+            "action": "navigate",
+            "target": "json",
+            "response": "Opening JSON Formatter...",
+        },
+        "devtools": {
+            "keywords": ["devtool", "dev tools", "developer", "base64", "uuid", "lorem"],
+            "action": "navigate",
+            "target": "devtools",
+            "response": "Opening Developer Tools...",
+        },
+        "clipboard": {
+            "keywords": ["clipboard", "copy history", "paste history"],
+            "action": "navigate",
+            "target": "clipboard",
+            "response": "Opening Clipboard Manager...",
+        },
+        "breathe": {
+            "keywords": ["breathe", "breathing", "relax", "meditate", "calm"],
+            "action": "navigate",
+            "target": "breathe",
+            "response": "Opening Breathing Exercise...",
+        },
+        "world": {
+            "keywords": ["world clock", "timezone", "time zone", "other time"],
+            "action": "navigate",
+            "target": "world",
+            "response": "Opening World Clock...",
+        },
+        "security": {
+            "keywords": ["security", "firewall", "vpn", "protection", "safe"],
+            "action": "navigate",
+            "target": "security",
+            "response": "Opening Security Panel...",
+        },
+        "network": {
+            "keywords": ["network", "bandwidth", "latency", "connection", "internet"],
+            "action": "navigate",
+            "target": "network",
+            "response": "Opening Network Monitor...",
+        },
+        "ai": {
+            "keywords": ["ai core", "model", "ollama", "llm", "neural"],
+            "action": "navigate",
+            "target": "ai",
+            "response": "Opening AI Core...",
+        },
+        "news": {
+            "keywords": ["news", "headlines", "updates", "current events"],
+            "action": "navigate",
+            "target": "news",
+            "response": "Opening News Feed...",
+        },
+        "quotes": {
+            "keywords": ["quote", "quotes", "inspiration", "motivation", "wisdom"],
+            "action": "navigate",
+            "target": "quotes",
+            "response": "Opening Quotes...",
+        },
+        "widgets": {
+            "keywords": ["widget", "widgets", "manage widget", "layout", "customize"],
+            "action": "navigate",
+            "target": "widgets",
+            "response": "Opening Widget Manager...",
         },
         "godmode": {
             "keywords": ["godmode", "god mode", "full ai", "stariz"],
@@ -279,19 +381,14 @@ class CommandRouter:
         """Fuzzy match text against keywords with partial and stemmed matching."""
         text_lower = text.lower()
         for kw in keywords:
-            if kw in text_lower:
-                return True
-            # Partial match: only for multi-word keywords, check if all words present
             kw_words = kw.split()
+            # Multi-word keywords: check if all words present in text
             if len(kw_words) > 1:
                 if all(word in text_lower for word in kw_words):
                     return True
-            # Single word keywords must match exactly or as substring of a word
-            elif len(kw_words) == 1 and len(kw) > 3:
-                word = kw_words[0]
-                # Check if it matches a whole word boundary
-                if re.search(r'\b' + re.escape(word) + r'\b', text_lower):
-                    return True
+            # Single word: must match as whole word (word boundary)
+            elif len(kw) > 2 and re.search(r'\b' + re.escape(kw) + r'\b', text_lower):
+                return True
         return False
 
     @classmethod

@@ -1,4 +1,4 @@
-import { ApiConfig } from './ApiKeyManager';
+import { ApiConfig } from '../components/ApiKeyManager';
 import { ollamaService, OllamaGenerateResponse } from './ollama';
 
 interface AIServiceResponse {
@@ -27,9 +27,12 @@ export class AIService {
 
   async isOnline(): Promise<boolean> {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       const response = await fetch('https://api.ipify.org?format=json', {
-        timeout: 3000,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       return false;
@@ -41,8 +44,7 @@ export class AIService {
   }
 
   async getAvailableModels(): Promise<
-    | { name: string; provider: 'ollama' }[]
-    | { name: string; provider: 'api'; id: string }[]
+    ({ name: string; provider: 'ollama' } | { name: string; provider: 'api'; id: string })[]
   > {
     const [ollamaModels, apiModels] = await Promise.all([
       this.ollama.listModels(),
@@ -60,7 +62,7 @@ export class AIService {
       id: model.id,
     }));
 
-    return [...ollama, ...api];
+    return [...ollama, ...api] as ({ name: string; provider: 'ollama' } | { name: string; provider: 'api'; id: string })[];
   }
 
   private async getApiModels(): Promise<Array<{ name: string; id: string }>> {
@@ -121,7 +123,7 @@ export class AIService {
         if (isOnline && this.currentApiConfig) {
           return this.generateApiResponse(prompt, systemPrompt, options);
         }
-        throw error;
+        throw error instanceof Error ? error : new Error(String(error));
       }
     }
 
@@ -335,7 +337,7 @@ export class AIService {
         );
         onComplete(response);
       } catch (error) {
-        onError(error);
+        onError(error instanceof Error ? error : new Error(String(error)));
       }
       return;
     }

@@ -15,6 +15,7 @@ interface Message {
 interface SessionInfo {
   session_id: string;
   message_count: number;
+  model?: string;
   user_patterns: {
     frequent_commands: Array<{keyword: string; count: number}>;
     active_hours: number[];
