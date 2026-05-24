@@ -9,6 +9,7 @@ import {
   ScrollText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import soundManager from '../utils/sounds';
 
 interface SidebarProps {
   activeTab: string;
@@ -72,7 +73,7 @@ export default function Sidebar({ activeTab, onTabChange, mobileOpen, onMobileCl
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 + index * 0.02 }}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => { soundManager.navigate(); onTabChange(item.id); }}
               className={`relative w-full flex items-center gap-3 px-4 py-2.5 transition-all group ${
                 isActive ? 'bg-[#00f0ff]/5' : 'hover:bg-white/5'
               }`}
@@ -106,7 +107,7 @@ export default function Sidebar({ activeTab, onTabChange, mobileOpen, onMobileCl
       </div>
 
       <button
-        onClick={() => setCollapsed(!collapsed)}
+        onClick={() => { soundManager.select(); setCollapsed(!collapsed); }}
         className="hidden md:flex p-4 border-t border-[#1a1a3a] text-[#00f0ff]/50 hover:text-[#00f0ff] transition-colors items-center justify-center"
       >
         <motion.div animate={{ rotate: collapsed ? 180 : 0 }}>

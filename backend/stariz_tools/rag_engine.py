@@ -8,10 +8,23 @@ import json
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
-import chromadb
-from chromadb.config import Settings
-from rank_bm25 import BM25Okapi
 import re
+
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    CHROMADB_AVAILABLE = False
+    chromadb = None
+    Settings = None
+
+try:
+    from rank_bm25 import BM25Okapi
+    BM25_AVAILABLE = True
+except ImportError:
+    BM25_AVAILABLE = False
+    BM25Okapi = None
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +44,15 @@ class RAGEngine:
     def __init__(self):
         if self._initialized:
             return
+        self.client = None
+        self.collection = None
+        self.bm25_index = None
+        self.bm25_documents = []
+        self.bm25_ids = []
+        if not CHROMADB_AVAILABLE:
+            logger.warning("chromadb not installed. RAG Engine disabled.")
+            self._initialized = True
+            return
         try:
             DB_PATH.mkdir(parents=True, exist_ok=True)
             self.client = chromadb.PersistentClient(path=str(DB_PATH))
@@ -38,15 +60,15 @@ class RAGEngine:
                 name="knowledge_base",
                 metadata={"hnsw:space": "cosine"}
             )
-            self.bm25_index = None
-            self.bm25_documents = []
-            self.bm25_ids = []
             self._rebuild_bm25_index()
             self._initialized = True
             logger.info(f"RAG Engine initialized. Documents: {self.collection.count()}")
         except Exception as e:
             logger.error(f"Failed to initialize RAG Engine: {e}")
-            raise
+            self._initialized = True
+
+    def _is_available(self) -> bool:
+        return CHROMADB_AVAILABLE and self.collection is not None
 
     def _tokenize(self, text: str) -> List[str]:
         """Simple tokenizer for BM25."""
@@ -68,6 +90,8 @@ class RAGEngine:
 
     def ingest_text(self, text: str, source: str, metadata: Optional[Dict] = None) -> int:
         """Ingest text into knowledge base. Returns number of chunks created."""
+        if not self._is_available():
+            return 0
         if not text.strip():
             return 0
         chunks = self._split_text(text)
@@ -151,6 +175,8 @@ class RAGEngine:
     def search(self, query: str, top_k: int = 5, filter_source: Optional[str] = None,
                use_hybrid: bool = True) -> List[Dict]:
         """Search knowledge base with hybrid vector + BM25 search."""
+        if not self._is_available():
+            return []
         try:
             where = None
             if filter_source:
@@ -225,6 +251,8 @@ class RAGEngine:
 
     def get_stats(self) -> Dict:
         """Get knowledge base statistics."""
+        if not self._is_available():
+            return {"status": "disabled", "reason": "chromadb not installed"}
         return {
             "total_documents": self.collection.count(),
             "embedding_model": "chroma-default",
@@ -238,6 +266,8 @@ class RAGEngine:
 
     def delete_collection(self):
         """Reset knowledge base."""
+        if not self._is_available():
+            return {"status": "error", "detail": "chromadb not installed"}
         try:
             self.client.delete_collection("knowledge_base")
             self.collection = self.client.create_collection(

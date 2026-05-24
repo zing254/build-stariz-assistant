@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Zap, Shield, Globe } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import soundManager from '../utils/sounds';
 
 export default function WelcomeModal() {
   const [seen, setSeen] = useLocalStorage('stariz-welcome-seen', false);
   const [open, setOpen] = useState(false);
+  const spokenRef = useRef(false);
 
   useEffect(() => {
     if (!seen) {
@@ -14,7 +16,22 @@ export default function WelcomeModal() {
     }
   }, [seen]);
 
+  useEffect(() => {
+    if (open && !spokenRef.current) {
+      spokenRef.current = true;
+      try {
+        const utterance = new SpeechSynthesisUtterance('Welcome, Commander. STARIZ AI is online and ready.');
+        utterance.rate = 0.9;
+        utterance.pitch = 1.1;
+        utterance.volume = 0.7;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      } catch {}
+    }
+  }, [open]);
+
   const dismiss = () => {
+    soundManager.success();
     setOpen(false);
     setSeen(true);
   };

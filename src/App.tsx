@@ -317,7 +317,7 @@ export default function App() {
               onMobileClose={() => setMobileMenuOpen(false)}
             />
 
-            <main className="flex-1 min-h-0 overflow-hidden bg-[#050510]/40 relative">
+            <main className="flex-1 min-h-0 overflow-y-auto bg-[#050510]/40 relative pb-16 md:pb-0">
               {/* Floating toolbar */}
                <div className="absolute top-3 right-4 z-30 flex items-center gap-2 flex-wrap justify-end max-w-[70%]">
                  <button
@@ -359,7 +359,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="h-full pt-10"
+                  className="min-h-full pt-10"
                 >
                   {renderContent()}
                 </motion.div>

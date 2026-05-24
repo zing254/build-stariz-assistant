@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cpu, Brain, Database, Mic, Shield, Zap } from 'lucide-react';
+import soundManager from '../utils/sounds';
 
 interface BootStep {
   label: string;
@@ -43,6 +44,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
       if (!spokenRef.current) {
         spokenRef.current = true;
         speakGreeting();
+        soundManager.startup();
       }
       const timer = setTimeout(() => setVisible(false), 1500);
       return () => clearTimeout(timer);

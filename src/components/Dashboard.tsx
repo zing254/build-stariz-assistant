@@ -60,8 +60,8 @@ export default function Dashboard() {
   const { visibleWidgets, toggleVisibility, toggleExpanded, cycleSize } = useWidgetLayout();
 
   return (
-    <div className="flex-1 min-h-0 overflow-hidden">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full overflow-y-auto p-4">
+    <div className="flex-1 min-h-0">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-full overflow-y-auto p-4">
         <div className="grid grid-cols-12 gap-4">
           {visibleWidgets.map((config) => {
             const Component = WIDGET_COMPONENTS[config.id];

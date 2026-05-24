@@ -4,6 +4,7 @@ import {
   LayoutDashboard, MessageSquare, Mic, Terminal,
   FileText, Code, Zap, Settings, Menu, X,
 } from 'lucide-react';
+import soundManager from '../utils/sounds';
 
 interface MobileNavProps {
   activeTab: string;
@@ -35,7 +36,7 @@ export default function MobileNav({ activeTab, onTabChange }: MobileNavProps) {
             return (
               <button
                 key={tab.id}
-                onClick={() => { onTabChange(tab.id); setExpanded(false); }}
+                onClick={() => { soundManager.navigate(); onTabChange(tab.id); setExpanded(false); }}
                 className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all ${
                   isActive ? 'text-[#00f0ff]' : 'text-white/40'
                 }`}
@@ -48,7 +49,7 @@ export default function MobileNav({ activeTab, onTabChange }: MobileNavProps) {
           
           {/* More Button */}
           <button
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => { soundManager.select(); setExpanded(!expanded); }}
             className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-all ${
               expanded ? 'text-[#ff00a0]' : 'text-white/40'
             }`}
@@ -85,7 +86,7 @@ export default function MobileNav({ activeTab, onTabChange }: MobileNavProps) {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => { onTabChange(tab.id); setExpanded(false); }}
+                      onClick={() => { soundManager.navigate(); onTabChange(tab.id); setExpanded(false); }}
                       className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${
                         isActive 
                           ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/30' 
