@@ -48,9 +48,10 @@ app = FastAPI(
 )
 
 # CORS configuration
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -734,6 +735,74 @@ async def ai_sessions():
         raise HTTPException(status_code=503, detail="AI Core not available")
     return {"sessions": core.get_all_sessions()}
 
+# --- Log API ---
+from stariz_tools.log_manager import (
+    log_event as log_event_fn,
+    query_logs,
+    get_log_sources,
+    get_log_stats,
+    clear_logs as clear_logs_fn,
+    get_log_files,
+)
+
+class LogQueryRequest(BaseModel):
+    source: Optional[str] = None
+    level: Optional[str] = None
+    event_type: Optional[str] = None
+    limit: int = 100
+    offset: int = 0
+    since: Optional[str] = None
+
+class LogWriteRequest(BaseModel):
+    source: str
+    event_type: str
+    message: str
+    level: str = "info"
+    metadata: Optional[Dict[str, Any]] = None
+
+@app.post("/api/logs/query")
+async def logs_query(request: LogQueryRequest):
+    """Query log entries with filters and pagination."""
+    return query_logs(
+        source=request.source,
+        level=request.level,
+        event_type=request.event_type,
+        limit=request.limit,
+        offset=request.offset,
+        since=request.since,
+    )
+
+@app.post("/api/logs/write")
+async def logs_write(request: LogWriteRequest):
+    """Write a log entry."""
+    return log_event_fn(
+        source=request.source,
+        event_type=request.event_type,
+        message=request.message,
+        metadata=request.metadata,
+        level=request.level,
+    )
+
+@app.get("/api/logs/sources")
+async def logs_sources():
+    """Get log sources with counts."""
+    return get_log_sources()
+
+@app.get("/api/logs/stats")
+async def logs_stats():
+    """Get log statistics."""
+    return get_log_stats()
+
+@app.get("/api/logs/files")
+async def logs_files():
+    """Get log file listing."""
+    return get_log_files()
+
+@app.delete("/api/logs/clear")
+async def logs_clear(source: Optional[str] = None):
+    """Clear log files."""
+    return clear_logs_fn(source=source)
+
 # --- Agent API ---
 class AgentExecuteRequest(BaseModel):
     task: str
@@ -743,12 +812,34 @@ class AgentExecuteRequest(BaseModel):
 async def agent_execute(request: AgentExecuteRequest):
     """Execute a task using the ReAct agent loop."""
     from stariz_tools.agent import ReActAgent
-    from stariz_tools import SystemTools, FileTools
+    from stariz_tools import SystemTools, FileTools, ImageTools, DataTools
 
     tool_registry = {
+        # System tools
         "system_info": lambda _: SystemTools.get_system_info(),
+        "cpu_info": lambda _: SystemTools.get_cpu_info(),
+        "memory_info": lambda _: SystemTools.get_memory_info(),
+        "disk_info": lambda _: SystemTools.get_disk_info(),
+        "network_info": lambda _: SystemTools.get_network_info(),
+        "process_list": lambda input_str: SystemTools.get_process_list(
+            limit=20, sort_by="cpu"
+        ),
+        "ping_host": lambda host: SystemTools.ping_host(host.strip()),
+        # File tools
         "list_files": lambda path: FileTools.list_directory(path),
         "read_file": lambda path: FileTools.read_file(path),
+        "delete_path": lambda path: FileTools.delete_path(path),
+        "create_directory": lambda path: FileTools.create_directory(path),
+        "get_file_info": lambda path: FileTools.get_file_info(path),
+        "read_json": lambda path: FileTools.read_json(path),
+        "read_csv": lambda path: FileTools.read_csv(path),
+        # Image tools
+        "get_image_info": lambda path: ImageTools.get_image_info(path),
+        "image_to_base64": lambda path: ImageTools.image_to_base64(path),
+        # Data tools
+        "calculate_statistics": lambda input_str: DataTools.calculate_statistics(
+            [float(x) for x in input_str.split(",") if x.strip().replace(".", "").replace("-", "").isdigit()]
+        ),
     }
 
     engine = get_rag_engine()
@@ -763,7 +854,7 @@ async def agent_execute(request: AgentExecuteRequest):
             with _httpx.Client(timeout=120) as _client:
                 resp = _client.post(
                     "http://localhost:11434/api/chat",
-                    json={"model": "qwen3:4b", "messages": [{"role": "user", "content": prompt}], "stream": False},
+                    json={"model": "Tinyllama:latest", "messages": [{"role": "user", "content": prompt}], "stream": False},
                 )
                 return resp.json().get("message", {}).get("content", "")
         except Exception as e:

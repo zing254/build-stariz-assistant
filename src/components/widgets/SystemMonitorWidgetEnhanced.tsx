@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Cpu, MemoryStick, HardDrive, Wifi, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import { usePythonBackend } from '../../hooks/usePythonBackend';
-import { toast } from '../Toast';
 
 export default function SystemMonitorWidgetEnhanced() {
   const { connected, systemStats, callTool } = usePythonBackend();
@@ -40,7 +38,7 @@ export default function SystemMonitorWidgetEnhanced() {
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
 
-    const { cpu_percent, memory, disk } = systemStats;
+    const { cpu_percent } = systemStats;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 

@@ -35,7 +35,7 @@ class WebSocketMock {
   onclose: (() => void) | null = null;
   readyState = 1; // OPEN
 
-  constructor(url: string) {
+  constructor(_url: string) {
     // Constructor logic
   }
 
@@ -55,7 +55,7 @@ global.Notification = class Notification {
   static permission = 'granted';
   static requestPermission = vi.fn().mockResolvedValue('granted');
   
-  constructor(title: string, options?: any) {
+  constructor(_title: string, _options?: any) {
     // Constructor logic
   }
 } as any;

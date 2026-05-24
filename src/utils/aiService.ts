@@ -1,5 +1,5 @@
 import { ApiConfig } from '../components/ApiKeyManager';
-import { ollamaService, OllamaGenerateResponse } from './ollama';
+import { ollamaService } from './ollama';
 
 interface AIServiceResponse {
   content: string;
@@ -92,7 +92,7 @@ export class AIService {
     systemPrompt: string = '',
     options: AIServiceOptions = {}
   ): Promise<AIServiceResponse> {
-    const { temperature = 0.7, maxTokens = 1024 } = options;
+    const { temperature = 0.7 } = options;
 
     // Check if we should use offline mode
     const isOnline = await this.isOnline();
@@ -175,7 +175,7 @@ export class AIService {
 
     let url: string;
     let body: any;
-    let headers: Record<string, string> = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
@@ -296,7 +296,7 @@ export class AIService {
     onComplete: (response: AIServiceResponse) => void,
     onError: (error: Error) => void
   ) {
-    const { temperature = 0.7, maxTokens = 1024 } = options;
+    const { temperature = 0.7 } = options;
 
     // Check if we should use offline mode
     const isOnline = await this.isOnline();

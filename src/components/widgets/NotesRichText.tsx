@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   StickyNote, Bold, Italic, Underline, List, ListOrdered,
-  Quote, Code, Link, Image, Undo, Redo,
-  Eye, EyeOff, Save, Trash2, Plus, Copy, Check,
+  Code, Eye, EyeOff, Trash2, Plus, Copy,
 } from 'lucide-react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { generateId } from '../../utils/helpers';
@@ -35,7 +34,7 @@ export default function NotesRichTextWidget() {
   ]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
-  const [selectionStart, setSelectionStart] = useState(0);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const activeNote = notes.find(n => n.id === activeNoteId) || null;
@@ -48,7 +47,7 @@ export default function NotesRichTextWidget() {
 
   const renderMarkdown = (text: string): string => {
     // Simple Markdown parser (in production, use a library like marked or remark)
-    let html = text
+    const html = text
       // Headers
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h2>$1</h2>')

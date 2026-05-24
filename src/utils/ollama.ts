@@ -1,5 +1,3 @@
-import { ApiConfig } from '../components/ApiKeyManager';
-
 interface OllamaModel {
   name: string;
   size: string;

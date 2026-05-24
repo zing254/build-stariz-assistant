@@ -1,0 +1,2 @@
+{"timestamp": "2026-05-24T03:11:19.096476", "source": "agent", "type": "init", "level": "info", "message": "agent started", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.104230", "source": "agent", "type": "task", "level": "info", "message": "Processing", "metadata": {"task_id": 42, "duration": 1.5}}

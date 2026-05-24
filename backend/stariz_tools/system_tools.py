@@ -7,6 +7,7 @@ import psutil
 import platform
 import socket
 import subprocess
+import re
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 
@@ -187,6 +188,9 @@ class SystemTools:
     @staticmethod
     def ping_host(host: str, count: int = 4) -> Dict[str, Any]:
         """Ping a host and return statistics."""
+        if not re.match(r'^[a-zA-Z0-9._-]+$', host):
+            return {"success": False, "error": "Invalid hostname. Only alphanumeric, dots, hyphens, and underscores allowed."}
+        count = max(1, min(10, int(count)))
         try:
             result = subprocess.run(
                 ["ping", "-c", str(count), host],

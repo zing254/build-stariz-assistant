@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader, Bot, User, Trash2, Copy, Check, Sparkles, Brain, Database, Clock, X, Search, Info } from 'lucide-react';
+import { Send, Loader, Bot, User, Trash2, Copy, Check, Sparkles, Brain, Database, Search, Info } from 'lucide-react';
 import { renderMarkdown } from '../utils/markdown.tsx';
 
 const BACKEND_URL = import.meta.env.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';

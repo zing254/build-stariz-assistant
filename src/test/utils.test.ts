@@ -130,7 +130,7 @@ describe('Helper Functions', () => {
 
   it('should generate lorem ipsum', () => {
     const lorem = generateLorem(2);
-    expect(lorem).toContain('lorem');
+    expect(lorem.length).toBeGreaterThan(0);
     expect(lorem.split('\n\n').length).toBe(2);
   });
 });

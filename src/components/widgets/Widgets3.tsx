@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Timer, Play, Pause, RotateCcw, Globe, Clock, Terminal,
@@ -17,11 +17,11 @@ export function PomodoroWidget() {
   const [mode, setMode] = useState<'work' | 'short' | 'long'>('work');
   const [sessions, setSessions] = useLocalStorage('stariz-pomodoro-sessions', 0);
 
-  const modes = {
+  const modes = useMemo(() => ({
     work: { time: 25 * 60, label: 'Focus', color: '#00f0ff' },
     short: { time: 5 * 60, label: 'Short Break', color: '#00ff88' },
     long: { time: 15 * 60, label: 'Long Break', color: '#a855f7' },
-  };
+  }), []);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -37,7 +37,7 @@ export function PomodoroWidget() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isRunning, mode]);
+  }, [isRunning, mode, modes, setSessions]);
 
   const switchMode = (m: 'work' | 'short' | 'long') => {
     setMode(m);
@@ -198,7 +198,7 @@ export function TerminalWidget() {
     calc: () => {
       try {
         const expr = input.replace(/^calc\s*/, '');
-        // eslint-disable-next-line no-new-func
+         
         return String(new Function('return ' + expr)());
       } catch { return 'Invalid expression'; }
     },

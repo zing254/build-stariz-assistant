@@ -14,15 +14,12 @@ interface Plugin {
 
 export function PluginManager() {
   const [plugins, setPlugins] = useState<Plugin[]>([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadPlugins();
   }, []);
 
   const loadPlugins = () => {
-    // Scan plugins directory
-    const pluginDir = './backend/plugins';
     // For now, show sample plugins
     setPlugins([
       {

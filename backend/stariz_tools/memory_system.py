@@ -47,11 +47,37 @@ class MemorySystem:
             raise
 
     def _apply_memory_decay(self):
-        """Archive old memories that haven't been accessed recently."""
+        """Archive old episodic memories that haven't been accessed recently."""
         try:
             cutoff = (datetime.now() - timedelta(days=90)).isoformat()
             profile = self.get_user_profile()
+
+            # Find old episodic memories
+            all_episodic = self.episodic.get(include=["documents", "metadatas"])
+            ids_to_archive = []
             archived = profile.get("archived_memories", [])
+
+            for doc_id, doc, meta in zip(
+                all_episodic.get("ids", []),
+                all_episodic.get("documents", []),
+                all_episodic.get("metadatas", [])
+            ):
+                ts = meta.get("timestamp", "")
+                if ts < cutoff:
+                    archived.append({
+                        "id": doc_id,
+                        "content": (doc or "")[:200],
+                        "timestamp": ts,
+                        "importance": meta.get("importance"),
+                        "archived_at": datetime.now().isoformat(),
+                    })
+                    ids_to_archive.append(doc_id)
+
+            if ids_to_archive:
+                self.episodic.delete(ids=ids_to_archive)
+                profile["archived_memories"] = archived[-500:]
+                logger.info(f"Archived {len(ids_to_archive)} old episodic memories")
+
             profile["last_decay_check"] = datetime.now().isoformat()
             self.update_user_profile(profile)
         except Exception as e:
@@ -229,7 +255,7 @@ class MemorySystem:
             "name": "User",
             "timezone": "UTC",
             "preferred_tone": "professional",
-            "preferred_model": "qwen3:4b",
+            "preferred_model": "Tinyllama:latest",
             "work_hours": {"start": "09:00", "end": "18:00"},
             "frequent_commands": [],
             "projects": [],

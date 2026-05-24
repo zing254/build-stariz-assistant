@@ -1,4 +1,4 @@
-# Deployment Guide — STARIZ AI Assistant v2.6.0
+# Deployment Guide — STARIZ AI Assistant v2.7.0
 
 ## Free Deployment Options
 
@@ -125,7 +125,7 @@ npm run dev
 
 ```bash
 ./build.sh
-# Output: dist/index.html (single file, 750KB)
+# Output: dist/index.html (single file, ~720KB, gzip ~204KB)
 ```
 
 ---
@@ -136,7 +136,8 @@ npm run dev
 docker compose up -d
 ```
 
-Includes: Backend + Ollama + Redis services
+Includes: Backend (FastAPI on port 8000) + Ollama (LLM on port 11434) + Redis (caching on port 6379)
+Requires: [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/)
 
 ---
 

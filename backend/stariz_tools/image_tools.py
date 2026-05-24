@@ -12,10 +12,31 @@ import base64
 class ImageTools:
     """Tools for image processing operations."""
 
+    ALLOWED_BASE_DIRS = [
+        Path.home(),
+        Path("/tmp"),
+        Path("/var/tmp"),
+    ]
+
+    @classmethod
+    def _validate_path(cls, path: str) -> tuple[bool, str]:
+        """Validate that path is within allowed directories."""
+        try:
+            resolved = Path(path).resolve()
+            for base in cls.ALLOWED_BASE_DIRS:
+                if str(resolved).startswith(str(base.resolve())):
+                    return True, ""
+            return False, f"Access denied: path outside allowed directories ({path})"
+        except Exception as e:
+            return False, f"Path validation error: {str(e)}"
+
     @staticmethod
     def get_image_info(path: str) -> Dict[str, Any]:
         """Get information about an image file."""
         try:
+            valid, msg = ImageTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             from PIL import Image
 
             p = Path(path)
@@ -47,6 +68,12 @@ class ImageTools:
     ) -> Dict[str, Any]:
         """Resize an image."""
         try:
+            valid, msg = ImageTools._validate_path(input_path)
+            if not valid:
+                return {"success": False, "error": msg}
+            valid, msg = ImageTools._validate_path(output_path)
+            if not valid:
+                return {"success": False, "error": msg}
             from PIL import Image
 
             with Image.open(input_path) as img:
@@ -79,6 +106,12 @@ class ImageTools:
     ) -> Dict[str, Any]:
         """Convert image to a different format."""
         try:
+            valid, msg = ImageTools._validate_path(input_path)
+            if not valid:
+                return {"success": False, "error": msg}
+            valid, msg = ImageTools._validate_path(output_path)
+            if not valid:
+                return {"success": False, "error": msg}
             from PIL import Image
 
             with Image.open(input_path) as img:
@@ -110,6 +143,12 @@ class ImageTools:
     ) -> Dict[str, Any]:
         """Create a thumbnail of an image."""
         try:
+            valid, msg = ImageTools._validate_path(input_path)
+            if not valid:
+                return {"success": False, "error": msg}
+            valid, msg = ImageTools._validate_path(output_path)
+            if not valid:
+                return {"success": False, "error": msg}
             from PIL import Image
 
             with Image.open(input_path) as img:
@@ -137,6 +176,12 @@ class ImageTools:
     ) -> Dict[str, Any]:
         """Apply a filter to an image."""
         try:
+            valid, msg = ImageTools._validate_path(input_path)
+            if not valid:
+                return {"success": False, "error": msg}
+            valid, msg = ImageTools._validate_path(output_path)
+            if not valid:
+                return {"success": False, "error": msg}
             from PIL import Image, ImageFilter, ImageEnhance
 
             with Image.open(input_path) as img:
@@ -181,6 +226,9 @@ class ImageTools:
     def image_to_base64(path: str) -> Dict[str, Any]:
         """Convert an image to base64 encoding."""
         try:
+            valid, msg = ImageTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "File does not exist"}

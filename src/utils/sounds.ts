@@ -4,11 +4,6 @@
  * All sounds are generated programmatically (no external files needed)
  */
 
-interface SoundOptions {
-  volume?: number;
-  playbackRate?: number;
-}
-
 class SoundManager {
   private audioContext: AudioContext | null = null;
   private enabled: boolean = true;
@@ -98,7 +93,6 @@ class SoundManager {
 
   success() {
     if (!this.enabled) return;
-    const ctx = this.getContext();
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
     notes.forEach((freq, i) => {
       setTimeout(() => this.playTone(freq, 0.15, 'sine'), i * 80);
@@ -122,7 +116,6 @@ class SoundManager {
 
   messageReceived() {
     if (!this.enabled) return;
-    const ctx = this.getContext();
     const notes = [783.99, 987.77, 1174.66]; // G5, B5, D6
     notes.forEach((freq, i) => {
       setTimeout(() => this.playTone(freq, 0.1, 'sine'), i * 60);
@@ -141,7 +134,6 @@ class SoundManager {
 
   startup() {
     if (!this.enabled) return;
-    const ctx = this.getContext();
     const melody = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
     melody.forEach((freq, i) => {
       setTimeout(() => this.playTone(freq, 0.2, 'sine'), i * 120);

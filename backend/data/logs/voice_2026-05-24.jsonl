@@ -1,0 +1,2 @@
+{"timestamp": "2026-05-24T03:11:19.080972", "source": "voice", "type": "error", "level": "error", "message": "Failed", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.095919", "source": "voice", "type": "init", "level": "info", "message": "voice started", "metadata": {}}

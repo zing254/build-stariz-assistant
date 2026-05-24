@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Music, Play, Pause, SkipForward,
@@ -139,12 +139,12 @@ export function MusicPlayerWidget() {
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(70);
 
-  const tracks = [
+  const tracks = useMemo(() => [
     { title: 'Neon Dreams', artist: 'Cyberwave', duration: 245 },
     { title: 'Digital Rain', artist: 'SynthMaster', duration: 198 },
     { title: 'Quantum Echo', artist: 'Neural Net', duration: 312 },
     { title: 'Midnight Protocol', artist: 'ByteRunner', duration: 276 },
-  ];
+  ], []);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -158,7 +158,7 @@ export function MusicPlayerWidget() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, tracks]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 

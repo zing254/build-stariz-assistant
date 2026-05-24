@@ -1,0 +1,9 @@
+{"timestamp": "2026-05-24T03:11:18.874666", "source": "ai", "type": "chat", "level": "info", "message": "Hello", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.061461", "source": "ai", "type": "chat", "level": "info", "message": "Hello", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.074692", "source": "ai", "type": "chat", "level": "info", "message": "Hello", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.095095", "source": "ai", "type": "init", "level": "info", "message": "ai started", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.143585", "source": "ai", "type": "chat", "level": "info", "message": "Info", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.143906", "source": "ai", "type": "chat", "level": "warning", "message": "Warning", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.144080", "source": "ai", "type": "chat", "level": "error", "message": "Error", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.175173", "source": "ai", "type": "chat", "level": "info", "message": "Hello", "metadata": {}}
+{"timestamp": "2026-05-24T03:11:19.175526", "source": "ai", "type": "chat", "level": "info", "message": "How are you?", "metadata": {}}

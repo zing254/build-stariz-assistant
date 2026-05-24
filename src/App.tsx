@@ -30,8 +30,10 @@ import SystemMonitorWidgetEnhanced from './components/widgets/SystemMonitorWidge
 import TerminalWidgetEnhanced from './components/widgets/TerminalWidgetEnhanced';
 import FileManagerWidget from './components/widgets/FileManagerWidget';
 import CodeEditorWidget from './components/widgets/CodeEditorWidget';
-import AIChatEnhanced from './components/AIChatEnhanced';
-import AIChatGODMODE from './components/AIChatGODMODE';
+import AIChatUnified from './components/AIChatUnified';
+import LogViewer from './components/LogViewer';
+import BootSequence from './components/BootSequence';
+import { useLocalStorage } from './hooks/useLocalStorage';
 import VoiceAssistantEnhanced from './components/VoiceAssistantEnhanced';
 import {
   Keyboard, X, Command, Maximize2, Minimize2,
@@ -124,15 +126,9 @@ const CalculatorView = () => (
   </motion.div>
 );
 
-  const ChatView = () => (
+  const ChatUnifiedView = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-      <div className="h-full max-w-4xl mx-auto"><AIChatGODMODE /></div>
-    </motion.div>
-  );
-
-  const ChatClassicView = () => (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-      <div className="h-full max-w-4xl mx-auto"><AIChatEnhanced /></div>
+      <div className="h-full max-w-4xl mx-auto"><AIChatUnified /></div>
     </motion.div>
   );
 
@@ -199,6 +195,7 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAmbientMode, setShowAmbientMode] = useState(false);
+  const [bootDone, setBootDone] = useLocalStorage('stariz-boot-done', false);
 
   const handleExport = useCallback(() => {
     exportData();
@@ -247,9 +244,9 @@ export default function App() {
        case 'terminal-enhanced': return <TerminalEnhancedView />;
        case 'calendar': return wrapView(CalendarWidget)();
        case 'calculator': return <CalculatorView />;
-       case 'chat': return <ChatView />;
-       case 'chat-classic': return <ChatClassicView />;
-       case 'chat-enhanced': return <ChatClassicView />;
+        case 'chat': return <ChatUnifiedView />;
+        case 'chat-classic': return <ChatUnifiedView />;
+        case 'chat-enhanced': return <ChatUnifiedView />;
        case 'voice': return wrapView(VoiceAssistantEnhanced)();
        case 'whiteboard': return <WhiteboardView />;
        case 'journal': return <JournalView />;
@@ -278,8 +275,9 @@ export default function App() {
        case 'knowledge': return <KnowledgeBaseView />;
        case 'memory': return <MemoryView />;
        case 'agent': return <AgentView />;
-       case 'plugins': return <PluginView />;
-       default: return <Dashboard />;
+        case 'plugins': return <PluginView />;
+        case 'logs': return wrapView(LogViewer)();
+        default: return <Dashboard />;
      }
    };
 
@@ -306,6 +304,8 @@ export default function App() {
           )}
           {showAmbientMode && <AmbientMode onClose={() => setShowAmbientMode(false)} />}
         </AnimatePresence>
+
+        {!bootDone && <BootSequence onComplete={() => setBootDone(true)} />}
 
         {/* Main content area - takes remaining space */}
         <div className="flex-1 overflow-hidden">

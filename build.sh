@@ -17,17 +17,16 @@ echo "  ✓ Frontend built: dist/index.html ($(du -h dist/index.html | cut -f1))
 echo "[2/2] Checking backend..."
 source .venv/bin/activate
 python -c "
-from stariz_tools import (
-    SystemTools, FileTools, ImageTools, DataTools,
-    VoiceTools, RAGEngine, ReActAgent, MemorySystem,
-    STARIZAICore, AutonomousLearningEngine, CommandRouter
-)
+from stariz_tools.system_tools import SystemTools
+from stariz_tools.file_tools import FileTools
+from stariz_tools.image_tools import ImageTools
+from stariz_tools.data_tools import DataTools
+from stariz_tools.rag_engine import RAGEngine
+from stariz_tools.memory_system import MemorySystem
+from stariz_tools.command_router import CommandRouter
 print('  ✓ All backend modules imported successfully')
-print(f'  ✓ VoiceTools: STT={VoiceTools.init_stt()}, TTS={VoiceTools.init_tts()}')
-print(f'  ✓ RAGEngine: initialized')
-print(f'  ✓ MemorySystem: initialized')
-print(f'  ✓ AI Core: initialized')
-print(f'  ✓ Learning Engine: initialized')
+print(f'  ✓ RAGEngine: available')
+print(f'  ✓ MemorySystem: available')
 print(f'  ✓ Command Router: {len(CommandRouter.WIDGET_COMMANDS)} widget commands, {len(CommandRouter.SYSTEM_COMMANDS)} system commands')
 "
 

@@ -215,6 +215,7 @@ export function PasswordWidget() {
     setHistory([pwd, ...history].slice(0, 10));
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { generate(); }, []);
 
   const handleCopy = async () => {

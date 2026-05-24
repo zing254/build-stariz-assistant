@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder, FileText, ArrowLeft, Home, RefreshCw,
-  Trash2, Upload, Download, Copy, FileEdit, Plus
+  Trash2, Plus, Copy
 } from 'lucide-react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { toast } from '../Toast';
@@ -22,8 +22,6 @@ export default function FileManagerWidget() {
   const [error, setError] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [clipboard, setClipboard] = useState<FileItem | null>(null);
-
   const fetchDirectory = useCallback(async (path: string) => {
     setLoading(true);
     setError('');
@@ -50,7 +48,7 @@ export default function FileManagerWidget() {
 
   useEffect(() => {
     fetchDirectory(currentPath);
-  }, []);
+  }, [currentPath, fetchDirectory]);
 
   const handleItemClick = (item: FileItem) => {
     if (item.is_dir) {

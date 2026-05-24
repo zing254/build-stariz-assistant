@@ -3,6 +3,7 @@ ReAct Agent Loop — Reason, Act, Observe, Repeat
 Enables autonomous task execution with tool use.
 """
 import json
+import re
 import logging
 from typing import List, Dict, Any, Optional, Callable
 
@@ -107,21 +108,30 @@ Task: {task}
         return prompt
 
     def _parse_response(self, response: str) -> tuple:
-        lines = response.strip().split('\n')
         thought = ""
         action = ""
         action_input = ""
 
-        for line in lines:
-            stripped = line.strip()
-            if stripped.startswith("Thought:"):
-                thought = stripped.replace("Thought:", "").strip()
-            elif stripped.startswith("Action:"):
-                action = stripped.replace("Action:", "").strip()
-            elif stripped.startswith("Action Input:"):
-                action_input = stripped.replace("Action Input:", "").strip()
-            elif stripped.startswith("Final Answer:"):
-                answer = stripped.replace("Final Answer:", "").strip()
-                return "I have the answer", "Final Answer", answer
+        # Extract Final Answer
+        fa_match = re.search(r'Final Answer:\s*(.*)', response, re.DOTALL)
+        if fa_match:
+            thought_match = re.search(r'Thought:\s*(.*?)(?=Action:|Final Answer:|$)', response, re.DOTALL)
+            thought = thought_match.group(1).strip() if thought_match else "I have the answer"
+            return thought, "Final Answer", fa_match.group(1).strip()
+
+        # Extract Thought
+        thought_match = re.search(r'Thought:\s*(.*?)(?=Action:|$)', response, re.DOTALL)
+        if thought_match:
+            thought = thought_match.group(1).strip()
+
+        # Extract Action
+        action_match = re.search(r'Action:\s*(.*?)(?=Action Input:|$)', response, re.DOTALL)
+        if action_match:
+            action = action_match.group(1).strip()
+
+        # Extract Action Input
+        ai_match = re.search(r'Action Input:\s*(.*)', response, re.DOTALL)
+        if ai_match:
+            action_input = ai_match.group(1).strip()
 
         return thought, action, action_input

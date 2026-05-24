@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Terminal, Play, Trash2, Copy, Maximize2, Minimize2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Terminal, Play, Trash2, Copy } from 'lucide-react';
 import { toast } from '../Toast';
 
 interface TerminalLine {

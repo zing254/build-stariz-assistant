@@ -126,7 +126,7 @@ export default function AIChat() {
 
       let url: string;
       let body: any;
-      let headers: Record<string, string> = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 

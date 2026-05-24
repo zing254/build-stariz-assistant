@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ToastContainer, toast } from '../components/Toast';
 
 // Mock framer-motion
@@ -51,6 +51,7 @@ describe('Toast', () => {
     
     toast.success('Temporary message', 100);
     
+    await new Promise(resolve => setTimeout(resolve, 100));
     expect(screen.getByText('Temporary message')).toBeInTheDocument();
     
     // Wait for auto-remove

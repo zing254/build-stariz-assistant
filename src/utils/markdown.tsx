@@ -2,12 +2,7 @@
  * Simple Markdown Renderer for AI responses.
  * Converts markdown text to HTML-safe React elements.
  */
-
-interface MarkdownToken {
-  type: 'text' | 'bold' | 'italic' | 'code' | 'codeblock' | 'heading' | 'list' | 'link' | 'newline' | 'hr';
-  content: string;
-  level?: number;
-}
+import DOMPurify from 'dompurify';
 
 export function parseMarkdown(text: string): string {
   if (!text) return '';
@@ -40,7 +35,7 @@ export function parseMarkdown(text: string): string {
   html = html.replace(/^---$/gm, '<hr class="border-white/10 my-3" />');
 
   // Unordered lists
-  html = html.replace(/^[\-\*] (.+)$/gm, '<li class="ml-4 list-disc text-white/70">$1</li>');
+  html = html.replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc text-white/70">$1</li>');
 
   // Ordered lists
   html = html.replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-white/70">$1</li>');
@@ -63,10 +58,11 @@ export function parseMarkdown(text: string): string {
 
 export function renderMarkdown(text: string): React.ReactNode {
   const html = parseMarkdown(text);
+  const sanitized = DOMPurify.sanitize(html);
   return (
     <div
       className="markdown-content"
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: sanitized }}
     />
   );
 }

@@ -5,7 +5,8 @@ import {
   DollarSign, Quote, Clock, Lock, Ruler, Palette, Braces, Code,
   ClipboardList, Wind, MessageSquare, Paintbrush, BookOpen,
   LayoutGrid, HardDrive, FileCode, Activity, Timer, Square, X,
-  Database, Brain, Puzzle, Mic
+  Database, Brain, Puzzle, Mic,
+  ScrollText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,6 +26,7 @@ const navItems = [
   { id: 'memory', icon: Brain, label: 'Memory', color: '#a855f7' },
   { id: 'agent', icon: BrainCircuit, label: 'Agent', color: '#ff00a0' },
   { id: 'plugins', icon: Puzzle, label: 'Plugins', color: '#00ff88' },
+  { id: 'logs', icon: ScrollText, label: 'Logs', color: '#00f0ff' },
   { id: 'whiteboard', icon: Paintbrush, label: 'Whiteboard', color: '#a855f7' },
   { id: 'journal', icon: BookOpen, label: 'Journal', color: '#a855f7' },
   { id: 'terminal', icon: Terminal, label: 'Terminal', color: '#00ff88' },

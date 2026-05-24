@@ -103,7 +103,7 @@ class STARIZAICore:
         if hasattr(self, '_initialized'):
             return
         self.ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-        self.default_model = os.environ.get("STARIZ_MODEL", "qwen3:4b")
+        self.default_model = os.environ.get("STARIZ_MODEL", "Tinyllama:latest")
         self.chat_history: List[Dict] = []
         self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.user_patterns: Dict[str, Any] = {
@@ -204,6 +204,28 @@ class STARIZAICore:
                     cmd_freq.append({"keyword": keyword, "count": 1})
                 self.user_patterns["frequent_commands"] = cmd_freq
                 break
+
+        # Feed into Autonomous Learning Engine
+        try:
+            from stariz_tools.autonomous_learning import AutonomousLearningEngine
+            engine = AutonomousLearningEngine()
+            engine.log_interaction(
+                user_message=user_message,
+                response_type=action_taken,
+            )
+        except Exception:
+            pass
+
+        # Feed into Memory System for important interactions
+        try:
+            from stariz_tools.memory_system import MemorySystem
+            ms = MemorySystem()
+            # Store user message pattern as a learned fact if it reveals a preference
+            preference_indicators = ["i like", "i prefer", "i use", "my favorite", "set", "change"]
+            if any(indicator in cmd_lower for indicator in preference_indicators):
+                ms.learn_fact(user_message[:300], category="user_preference")
+        except Exception:
+            pass
 
         self._save_memory()
 
@@ -552,6 +574,22 @@ When user wants to go somewhere, suggest: "Navigate to [widget name] in the side
                                     break
                             except json.JSONDecodeError:
                                 continue
+
+            # After streaming completes, check for and execute tool calls
+            tool_calls = self._parse_tool_calls(full_response)
+            if tool_calls:
+                yield "\n\n**[Executing tools...]**\n\n"
+                tool_results_text = []
+                for tool_name, params in tool_calls:
+                    result = self.execute_tool(tool_name, params)
+                    self.tool_results.append({"tool": tool_name, "result": result})
+                    result_str = json.dumps(result, default=str)[:500]
+                    tool_results_text.append(f"**{tool_name}**: {result_str}")
+                    yield f"**{tool_name}**: {result_str}\n\n"
+
+                # Store cleaned response with tool results
+                clean_response = self._strip_tool_calls(full_response)
+                full_response = clean_response + "\n\n" + "\n".join(tool_results_text)
 
             self.chat_history.append({"role": "user", "content": user_message})
             self.chat_history.append({"role": "assistant", "content": full_response})

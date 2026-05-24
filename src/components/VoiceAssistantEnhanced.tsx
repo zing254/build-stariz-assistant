@@ -55,6 +55,7 @@ export default function VoiceAssistantEnhanced() {
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize speech systems
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     // Text-to-Speech setup
     if ('speechSynthesis' in window) {
@@ -90,14 +91,11 @@ export default function VoiceAssistantEnhanced() {
 
       rec.onresult = (event: any) => {
         let finalTranscript = '';
-        let interimTranscript = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
             finalTranscript += result[0].transcript;
-          } else {
-            interimTranscript += result[0].transcript;
           }
         }
 
@@ -148,6 +146,7 @@ export default function VoiceAssistantEnhanced() {
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     };
   }, []);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -287,9 +286,9 @@ export default function VoiceAssistantEnhanced() {
     }
 
     // Calculator
-    if (lower.includes('calculate') || lower.match(/\d+\s*[\+\-\*\/]\s*\d+/)) {
+    if (lower.includes('calculate') || lower.match(/\d+\s*[+\-*/]\s*\d+/)) {
       try {
-        const match = input.match(/(\d+\.?\d*)\s*([\+\-\*\/])\s*(\d+\.?\d*)/);
+        const match = input.match(/(\d+\.?\d*)\s*([+\-*/])\s*(\d+\.?\d*)/);
         if (match) {
           const a = parseFloat(match[1]);
           const op = match[2];

@@ -6,9 +6,9 @@ const CACHE_NAME = 'stariz-cache-v2.4.1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/assets/index.js',
-  '/assets/index.css',
   '/manifest.json',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
 ];
 
 // Install event - cache assets

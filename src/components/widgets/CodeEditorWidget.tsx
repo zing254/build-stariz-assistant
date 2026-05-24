@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-  Play, Save, FileText, RefreshCw, Copy, Check, X, Plus, FileEdit
+  Play, Save, FileText, RefreshCw, Copy, X, Plus, FileEdit
 } from 'lucide-react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { toast } from '../Toast';
@@ -41,9 +40,8 @@ export default function CodeEditorWidget() {
     if (activeFile) {
       setContent(activeFile.content);
       setLanguage(activeFile.language);
-      setIsEditing(false);
     }
-  }, [activeFileId]);
+  }, [activeFile, activeFileId]);
 
   const saveFile = () => {
     if (!activeFile) return;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mic, MicOff, Volume2, VolumeX, X } from 'lucide-react';
 import { VoiceVisualizer } from './VoiceVisualizer';
@@ -25,18 +25,7 @@ export function AmbientMode({ onClose }: AmbientModeProps) {
   const [response, setResponse] = useState('');
   const [commandHistory, setCommandHistory] = useState<{ user: string; assistant: string }[]>([]);
 
-  useEffect(() => {
-    startListening();
-    return () => stopListening();
-  }, []);
-
-  useEffect(() => {
-    if (transcription && !partialTranscription) {
-      processCommand(transcription);
-    }
-  }, [transcription, partialTranscription]);
-
-  const processCommand = async (command: string) => {
+  const processCommand = useCallback(async (command: string) => {
     const lower = command.toLowerCase().trim();
     let responseText = '';
 
@@ -73,7 +62,18 @@ export function AmbientMode({ onClose }: AmbientModeProps) {
     setResponse(responseText);
     setCommandHistory(prev => [...prev.slice(-9), { user: command, assistant: responseText }]);
     speak(responseText);
-  };
+  }, [speak, setResponse, setCommandHistory]);
+
+  useEffect(() => {
+    startListening();
+    return () => stopListening();
+  }, [startListening, stopListening]);
+
+  useEffect(() => {
+    if (transcription && !partialTranscription) {
+      processCommand(transcription);
+    }
+  }, [transcription, partialTranscription, processCommand]);
 
   return (
     <motion.div

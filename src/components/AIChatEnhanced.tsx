@@ -122,9 +122,8 @@ export default function AIChatEnhanced() {
 
 
 
-  const executeToolCall = async (toolCall: { tool: string; params: any }) => {
+  const executeToolCall = useCallback(async (toolCall: { tool: string; params: any }) => {
     try {
-      // Map tool names to API endpoints
       const toolMap: Record<string, string> = {
         'system_info': 'system/info',
         'system_cpu': 'system/cpu',
@@ -145,7 +144,7 @@ export default function AIChatEnhanced() {
     } catch (error: any) {
       return { error: error.message };
     }
-  };
+  }, [callPythonTool]);
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || streaming) return;
@@ -173,7 +172,7 @@ export default function AIChatEnhanced() {
 
       let url: string;
       let body: any;
-      let headers: Record<string, string> = {
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
@@ -245,7 +244,7 @@ export default function AIChatEnhanced() {
 
       const assistantId = generateId();
       let assistantContent = '';
-      let toolCalls: Message['toolCalls'] = [];
+      const toolCalls: Message['toolCalls'] = [];
 
       setMessages((prev) => [...prev, {
         id: assistantId,
@@ -355,7 +354,7 @@ export default function AIChatEnhanced() {
       setStreaming(false);
       setAbortController(null);
     }
-  }, [input, streaming, messages, setMessages, pythonTools]);
+  }, [input, streaming, messages, setMessages, pythonTools, executeToolCall]);
 
   const stopGeneration = () => {
     abortController?.abort();

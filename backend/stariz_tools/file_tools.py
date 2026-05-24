@@ -37,6 +37,9 @@ class FileTools:
     def list_directory(path: str) -> Dict[str, Any]:
         """List contents of a directory."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "Path does not exist"}
@@ -80,6 +83,9 @@ class FileTools:
     def read_file(path: str, encoding: str = "utf-8") -> Dict[str, Any]:
         """Read contents of a file."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "File does not exist"}
@@ -100,6 +106,9 @@ class FileTools:
     def write_file(path: str, content: str, encoding: str = "utf-8") -> Dict[str, Any]:
         """Write content to a file."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             p.parent.mkdir(parents=True, exist_ok=True)
             p.write_text(content, encoding=encoding)
@@ -111,6 +120,9 @@ class FileTools:
     def delete_path(path: str) -> Dict[str, Any]:
         """Delete a file or directory."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "Path does not exist"}
@@ -128,6 +140,9 @@ class FileTools:
     def create_directory(path: str) -> Dict[str, Any]:
         """Create a directory."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             p.mkdir(parents=True, exist_ok=True)
             return {"success": True, "path": str(p)}
@@ -138,6 +153,9 @@ class FileTools:
     def get_file_info(path: str) -> Dict[str, Any]:
         """Get information about a file or directory."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "Path does not exist"}
@@ -162,6 +180,9 @@ class FileTools:
     def read_json(path: str) -> Dict[str, Any]:
         """Read and parse a JSON file."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "File does not exist"}
@@ -178,6 +199,9 @@ class FileTools:
     def write_json(path: str, data: Any, indent: int = 2) -> Dict[str, Any]:
         """Write data to a JSON file."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             p.parent.mkdir(parents=True, exist_ok=True)
             content = json.dumps(data, indent=indent, ensure_ascii=False)
@@ -190,6 +214,9 @@ class FileTools:
     def read_csv(path: str) -> Dict[str, Any]:
         """Read a CSV file."""
         try:
+            valid, msg = FileTools._validate_path(path)
+            if not valid:
+                return {"success": False, "error": msg}
             p = Path(path)
             if not p.exists():
                 return {"success": False, "error": "File does not exist"}

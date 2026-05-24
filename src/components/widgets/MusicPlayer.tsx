@@ -83,7 +83,7 @@ export default function MusicPlayerWidget() {
         if (isPlaying) audioRef.current.play().catch(() => {});
       }
     }
-  }, [currentTrack]);
+  }, [currentTrack, isPlaying, tracks]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
