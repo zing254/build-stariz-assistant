@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, CheckCircle, AlertTriangle, Info, Bell, BellOff,
@@ -19,6 +19,17 @@ export interface Notification {
 
 interface NotificationSystemProps {
   children: React.ReactNode;
+}
+
+interface NotificationContextType {
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => string;
+}
+
+const NotificationContext = createContext<NotificationContextType | null>(null);
+
+export function useNotify(): NotificationContextType['addNotification'] {
+  const ctx = useContext(NotificationContext);
+  return ctx?.addNotification ?? (() => '');
 }
 
 export function NotificationProvider({ children }: NotificationSystemProps) {
@@ -100,11 +111,7 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  // Expose the addNotification function globally
-  useEffect(() => {
-    (window as any).starizNotify = addNotification;
-    return () => { delete (window as any).starizNotify; };
-  }, [addNotification]);
+  const notifCtx: NotificationContextType = { addNotification };
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {
@@ -125,7 +132,7 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
   };
 
   return (
-    <>
+    <NotificationContext.Provider value={notifCtx}>
       {/* Notification Bell Button */}
       <div className="relative">
         <button
@@ -166,11 +173,12 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-1 rounded hover:bg-[#1a1a3a] transition-colors"
-                  title={soundEnabled ? 'Disable sounds' : 'Enable sounds'}
-                >
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="p-1 rounded hover:bg-[#1a1a3a] transition-colors"
+                    title={soundEnabled ? 'Disable sounds' : 'Enable sounds'}
+                    aria-label={soundEnabled ? 'Disable notification sounds' : 'Enable notification sounds'}
+                  >
                   {soundEnabled ? (
                     <Volume2 className="w-3.5 h-3.5 text-[#00ff88]" />
                   ) : (
@@ -189,12 +197,14 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
                   onClick={clearAll}
                   className="p-1 rounded hover:bg-[#ff3366]/20 transition-colors"
                   title="Clear all"
+                  aria-label="Clear all notifications"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-white/30 hover:text-[#ff3366]" />
                 </button>
                 <button
                   onClick={() => setShowPanel(false)}
                   className="p-1 rounded hover:bg-[#1a1a3a]"
+                  aria-label="Close notification panel"
                 >
                   <X className="w-3.5 h-3.5 text-white/30" />
                 </button>
@@ -243,6 +253,7 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
                             removeNotification(notif.id);
                           }}
                           className="shrink-0 p-0.5 rounded hover:bg-[#ff3366]/20 opacity-0 group-hover:opacity-100"
+                          aria-label={`Remove ${notif.title} notification`}
                         >
                           <X className="w-3 h-3 text-white/20 hover:text-[#ff3366]" />
                         </button>
@@ -269,13 +280,8 @@ export function NotificationProvider({ children }: NotificationSystemProps) {
        </AnimatePresence>
 
       {children}
-    </>
+    </NotificationContext.Provider>
   );
-}
-
-// Helper function to send notifications from anywhere
-export function useNotify() {
-  return (window as any).starizNotify || (() => {});
 }
 
 export default NotificationProvider;

@@ -59,3 +59,31 @@ global.Notification = class Notification {
     // Constructor logic
   }
 } as any;
+
+// Mock AudioContext to suppress console errors in test (sounds.ts)
+const mockAudioCtx = {
+  currentTime: 0,
+  sampleRate: 44100,
+  state: 'running' as AudioContextState,
+  destination: {} as AudioDestinationNode,
+  createOscillator: () => ({
+    connect: vi.fn().mockReturnThis(),
+    start: vi.fn(),
+    stop: vi.fn(),
+    frequency: { value: 440, setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+    type: 'sine',
+  }),
+  createGain: () => ({
+    connect: vi.fn().mockReturnThis(),
+    gain: {
+      value: 0.3,
+      setValueAtTime: vi.fn(),
+      linearRampToValueAtTime: vi.fn(),
+      exponentialRampToValueAtTime: vi.fn(),
+    },
+  }),
+  close: vi.fn(),
+  resume: vi.fn(),
+};
+window.AudioContext = vi.fn(() => mockAudioCtx) as unknown as typeof AudioContext;
+(window as any).webkitAudioContext = window.AudioContext;

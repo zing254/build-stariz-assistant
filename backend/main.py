@@ -13,6 +13,7 @@ from typing import Dict, Any, Optional, List
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
+from contextlib import asynccontextmanager
 
 import psutil
 from fastapi import (
@@ -40,18 +41,109 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan — manages startup and shutdown lifecycle."""
+    logger.info("STARIZ AI Backend starting up...")
+
+    async def init_godmode():
+        # Voice engines
+        try:
+            from stariz_tools.voice_tools import VoiceTools
+            VoiceTools.init_stt()
+            VoiceTools.init_tts()
+            logger.info("Voice engines initialized")
+        except Exception as e:
+            logger.warning(f"Voice init failed: {e}")
+
+        # RAG engine
+        try:
+            engine = get_rag_engine()
+            if engine:
+                stats = engine.get_stats()
+                logger.info(f"RAG engine ready. Documents: {stats['total_documents']}")
+        except Exception as e:
+            logger.warning(f"RAG init failed: {e}")
+
+        # Memory system
+        try:
+            mem = get_memory_system()
+            if mem:
+                stats = mem.get_memory_stats()
+                logger.info(f"Memory system ready: {stats}")
+        except Exception as e:
+            logger.warning(f"Memory init failed: {e}")
+
+        # Autonomous Learning Engine
+        try:
+            from stariz_tools.autonomous_learning import AutonomousLearningEngine
+            from stariz_tools.autonomous_learning import background_learning_task
+            learning_engine = AutonomousLearningEngine()
+            asyncio.create_task(background_learning_task())
+            logger.info("Autonomous Learning Engine started")
+        except Exception as e:
+            logger.warning(f"Learning engine init failed: {e}")
+
+        # Auto-index user files on first run
+        try:
+            engine = get_rag_engine()
+            if engine and engine.collection.count() == 0:
+                import os
+                home = os.path.expanduser("~")
+                dirs_to_index = [
+                    os.path.join(home, "Documents"),
+                    os.path.join(home, "Downloads"),
+                ]
+                for d in dirs_to_index:
+                    if os.path.exists(d):
+                        count = engine.ingest_directory(d, max_files=20)
+                        if count > 0:
+                            logger.info(f"Auto-indexed {count} chunks from {d}")
+        except Exception as e:
+            logger.warning(f"Auto-index failed: {e}")
+
+    async def periodic_stats():
+        while True:
+            try:
+                stats = await update_system_stats()
+                await manager.broadcast(
+                    json.dumps({"type": "system_stats", "data": stats})
+                )
+            except Exception as e:
+                logger.error(f"Error in periodic stats broadcast: {e}")
+            await asyncio.sleep(2)
+
+    tasks = [
+        asyncio.create_task(init_godmode()),
+        asyncio.create_task(periodic_stats()),
+    ]
+
+    yield
+
+    for task in tasks:
+        task.cancel()
+
+    logger.info("STARIZ AI Backend shutting down...")
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="STARIZ AI Backend",
     description="Python backend for STARIZ AI Assistant",
-    version="2.4.1",
+    version="3.0.0",
+    lifespan=lifespan,
 )
 
 # CORS configuration
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
+if CORS_ORIGINS == "*":
+    origins = ["*"]
+else:
+    origins = CORS_ORIGINS.split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS.split(","),
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,11 +162,37 @@ async def rate_limit_middleware(request, call_next):
 
     rate_limit_store[client_ip] = [t for t in rate_limit_store[client_ip] if t > window_start]
 
+    if not rate_limit_store[client_ip]:
+        del rate_limit_store[client_ip]
+
     if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX:
         return JSONResponse(status_code=429, content={"error": "Rate limit exceeded"})
 
     rate_limit_store[client_ip].append(now)
     response = await call_next(request)
+    return response
+
+@app.middleware("http")
+async def security_headers_middleware(request, call_next):
+    response = await call_next(request)
+
+    csp_enabled = os.environ.get("CSP_ENABLED", "").lower() == "true"
+    if csp_enabled:
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self' ws: wss: https:; "
+            "frame-ancestors 'none';"
+        )
+
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
     return response
 
 # Basic authentication (optional, disabled by default)
@@ -1075,88 +1193,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         manager.disconnect(client_id)
 
 
-# Background task for periodic stats broadcast
-@app.on_event("startup")
-async def startup_event():
-    logger.info("STARIZ AI Backend starting up...")
 
-    # Initialize GODMODE components
-    async def init_godmode():
-        # Voice engines
-        try:
-            from stariz_tools.voice_tools import VoiceTools
-            VoiceTools.init_stt()
-            VoiceTools.init_tts()
-            logger.info("Voice engines initialized")
-        except Exception as e:
-            logger.warning(f"Voice init failed: {e}")
-
-        # RAG engine
-        try:
-            engine = get_rag_engine()
-            if engine:
-                stats = engine.get_stats()
-                logger.info(f"RAG engine ready. Documents: {stats['total_documents']}")
-        except Exception as e:
-            logger.warning(f"RAG init failed: {e}")
-
-        # Memory system
-        try:
-            mem = get_memory_system()
-            if mem:
-                stats = mem.get_memory_stats()
-                logger.info(f"Memory system ready: {stats}")
-        except Exception as e:
-            logger.warning(f"Memory init failed: {e}")
-
-        # Autonomous Learning Engine
-        try:
-            from stariz_tools.autonomous_learning import AutonomousLearningEngine
-            from stariz_tools.autonomous_learning import background_learning_task
-            learning_engine = AutonomousLearningEngine()
-            asyncio.create_task(background_learning_task())
-            logger.info("Autonomous Learning Engine started")
-        except Exception as e:
-            logger.warning(f"Learning engine init failed: {e}")
-
-        # Auto-index user files on first run
-        try:
-            engine = get_rag_engine()
-            if engine and engine.collection.count() == 0:
-                import os
-                home = os.path.expanduser("~")
-                dirs_to_index = [
-                    os.path.join(home, "Documents"),
-                    os.path.join(home, "Downloads"),
-                ]
-                for d in dirs_to_index:
-                    if os.path.exists(d):
-                        count = engine.ingest_directory(d, max_files=20)
-                        if count > 0:
-                            logger.info(f"Auto-indexed {count} chunks from {d}")
-        except Exception as e:
-            logger.warning(f"Auto-index failed: {e}")
-
-    asyncio.create_task(init_godmode())
-
-    # Start background task for system stats
-    async def periodic_stats():
-        while True:
-            try:
-                stats = await update_system_stats()
-                await manager.broadcast(
-                    json.dumps({"type": "system_stats", "data": stats})
-                )
-            except Exception as e:
-                logger.error(f"Error in periodic stats broadcast: {e}")
-            await asyncio.sleep(2)
-
-    asyncio.create_task(periodic_stats())
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("STARIZ AI Backend shutting down...")
 
 
 # Serve frontend static files in production

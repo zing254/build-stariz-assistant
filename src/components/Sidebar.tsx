@@ -20,8 +20,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', color: '#00f0ff' },
-  { id: 'chat', icon: BrainCircuit, label: 'AI GODMODE', color: '#ff00a0' },
-  { id: 'chat-classic', icon: MessageSquare, label: 'AI Chat', color: '#a855f7' },
+  { id: 'chat', icon: MessageSquare, label: 'AI Chat', color: '#ff00a0' },
   { id: 'voice', icon: Mic, label: 'Voice', color: '#00ff88' },
   { id: 'knowledge', icon: Database, label: 'Knowledge', color: '#00f0ff' },
   { id: 'memory', icon: Brain, label: 'Memory', color: '#a855f7' },
@@ -109,6 +108,7 @@ export default function Sidebar({ activeTab, onTabChange, mobileOpen, onMobileCl
       <button
         onClick={() => { soundManager.select(); setCollapsed(!collapsed); }}
         className="hidden md:flex p-4 border-t border-[#1a1a3a] text-[#00f0ff]/50 hover:text-[#00f0ff] transition-colors items-center justify-center"
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <motion.div animate={{ rotate: collapsed ? 180 : 0 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -152,7 +152,7 @@ export default function Sidebar({ activeTab, onTabChange, mobileOpen, onMobileCl
             >
               <div className="flex items-center justify-between p-4 border-b border-[#1a1a3a]">
                 <h2 className="font-display font-bold text-white tracking-wider">STARIZ<span className="text-[#00f0ff]">.</span>AI</h2>
-                <button onClick={onMobileClose} className="text-white/40 hover:text-white">
+                <button onClick={onMobileClose} className="text-white/40 hover:text-white" aria-label="Close sidebar">
                   <X className="w-5 h-5" />
                 </button>
               </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Background from './components/Background';
 import Header from './components/Header';
@@ -11,30 +11,9 @@ import StatusBar from './components/StatusBar';
 import ApiKeyManager from './components/ApiKeyManager';
 import Whiteboard from './components/Whiteboard';
 import WidgetManager from './components/WidgetManager';
-import JournalWidget from './components/widgets/JournalWidget';
 import { ToastContainer, toast } from './components/Toast';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { exportData } from './utils/helpers';
-import {
-  CalendarWidget, CalculatorWidget, NewsWidget
-} from './components/widgets/Widgets2';
-import {
-  WorldClockWidget, TerminalWidget, SecurityWidget, NetworkWidget, AICoreWidget, SettingsWidget, PomodoroWidget
-} from './components/widgets/Widgets3';
-import {
-  CryptoWidget, QuotesWidget, StopwatchWidget, PasswordWidget,
-  ConverterWidget, ColorWidget, JsonWidget, ToolsWidget,
-  ClipboardWidget, IpWidget, BreatheWidget
-} from './components/widgets/Widgets4';
-import SystemMonitorWidgetEnhanced from './components/widgets/SystemMonitorWidgetEnhanced';
-import TerminalWidgetEnhanced from './components/widgets/TerminalWidgetEnhanced';
-import FileManagerWidget from './components/widgets/FileManagerWidget';
-import CodeEditorWidget from './components/widgets/CodeEditorWidget';
-import AIChatUnified from './components/AIChatUnified';
-import LogViewer from './components/LogViewer';
-import BootSequence from './components/BootSequence';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import VoiceAssistantEnhanced from './components/VoiceAssistantEnhanced';
 import {
   Keyboard, X, Command, Maximize2, Minimize2,
   Download, Upload, Key, Mic
@@ -48,6 +27,40 @@ import { MemoryViewer } from './components/MemoryViewer';
 import { AgentStatus } from './components/AgentStatus';
 import { PluginManager } from './components/PluginManager';
 import { AmbientMode } from './components/AmbientMode';
+import { useLocalStorage } from './hooks/useLocalStorage';
+
+const CalendarWidget = React.lazy(() => import('./components/widgets/widgets/CalendarWidget').then(m => ({ default: m.CalendarWidget })));
+const CalculatorWidget = React.lazy(() => import('./components/widgets/widgets/CalculatorWidget').then(m => ({ default: m.CalculatorWidget })));
+const NewsWidget = React.lazy(() => import('./components/widgets/widgets/NewsWidget').then(m => ({ default: m.NewsWidget })));
+const WorldClockWidget = React.lazy(() => import('./components/widgets/widgets/WorldClockWidget').then(m => ({ default: m.WorldClockWidget })));
+const TerminalWidget = React.lazy(() => import('./components/widgets/widgets/TerminalWidget').then(m => ({ default: m.TerminalWidget })));
+const SecurityWidget = React.lazy(() => import('./components/widgets/widgets/SecurityWidget').then(m => ({ default: m.SecurityWidget })));
+const NetworkWidget = React.lazy(() => import('./components/widgets/widgets/NetworkWidget').then(m => ({ default: m.NetworkWidget })));
+const AICoreWidget = React.lazy(() => import('./components/widgets/widgets/AICoreWidget').then(m => ({ default: m.AICoreWidget })));
+const SettingsWidget = React.lazy(() => import('./components/widgets/widgets/SettingsWidget').then(m => ({ default: m.SettingsWidget })));
+const PomodoroWidget = React.lazy(() => import('./components/widgets/widgets/PomodoroWidget').then(m => ({ default: m.PomodoroWidget })));
+const CryptoWidget = React.lazy(() => import('./components/widgets/widgets/CryptoWidget').then(m => ({ default: m.CryptoWidget })));
+const QuotesWidget = React.lazy(() => import('./components/widgets/widgets/QuotesWidget').then(m => ({ default: m.QuotesWidget })));
+const StopwatchWidget = React.lazy(() => import('./components/widgets/widgets/StopwatchWidget').then(m => ({ default: m.StopwatchWidget })));
+const PasswordWidget = React.lazy(() => import('./components/widgets/widgets/PasswordWidget').then(m => ({ default: m.PasswordWidget })));
+const ConverterWidget = React.lazy(() => import('./components/widgets/widgets/ConverterWidget').then(m => ({ default: m.ConverterWidget })));
+const ColorWidget = React.lazy(() => import('./components/widgets/widgets/ColorWidget').then(m => ({ default: m.ColorWidget })));
+const JsonWidget = React.lazy(() => import('./components/widgets/widgets/JsonWidget').then(m => ({ default: m.JsonWidget })));
+const ToolsWidget = React.lazy(() => import('./components/widgets/widgets/ToolsWidget').then(m => ({ default: m.ToolsWidget })));
+const ClipboardWidget = React.lazy(() => import('./components/widgets/widgets/ClipboardWidget').then(m => ({ default: m.ClipboardWidget })));
+const IpWidget = React.lazy(() => import('./components/widgets/widgets/IpWidget').then(m => ({ default: m.IpWidget })));
+const BreatheWidget = React.lazy(() => import('./components/widgets/widgets/BreatheWidget').then(m => ({ default: m.BreatheWidget })));
+const JournalWidget = React.lazy(() => import('./components/widgets/JournalWidget').then(m => ({ default: m.default })));
+const SystemMonitorWidgetEnhanced = React.lazy(() => import('./components/widgets/SystemMonitorWidgetEnhanced').then(m => ({ default: m.default })));
+const TerminalWidgetEnhanced = React.lazy(() => import('./components/widgets/TerminalWidgetEnhanced').then(m => ({ default: m.default })));
+const FileManagerWidget = React.lazy(() => import('./components/widgets/FileManagerWidget').then(m => ({ default: m.default })));
+const CodeEditorWidget = React.lazy(() => import('./components/widgets/CodeEditorWidget').then(m => ({ default: m.default })));
+const AIChatUnified = React.lazy(() => import('./components/AIChatUnified').then(m => ({ default: m.default })));
+const LogViewer = React.lazy(() => import('./components/LogViewer').then(m => ({ default: m.default })));
+const BootSequence = React.lazy(() => import('./components/BootSequence').then(m => ({ default: m.default })));
+const VoiceAssistantEnhanced = React.lazy(() => import('./components/VoiceAssistantEnhanced').then(m => ({ default: m.default })));
+
+const Skeleton = () => <div className="skeleton h-full rounded-lg bg-[#0f0f2a]/50 animate-pulse" />;
 
 /* ─── Keyboard Help Overlay ─── */
 function KeyboardHelp({ onClose }: { onClose: () => void }) {
@@ -85,7 +98,7 @@ function KeyboardHelp({ onClose }: { onClose: () => void }) {
             <Command className="w-5 h-5 text-[#00f0ff]" />
             <h2 className="text-sm font-display font-bold text-white">Keyboard Shortcuts</h2>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+          <button onClick={onClose} className="text-white/40 hover:text-white" aria-label="Close keyboard shortcuts"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-2">
           {shortcuts.map((s) => (
@@ -108,7 +121,7 @@ function KeyboardHelp({ onClose }: { onClose: () => void }) {
 const wrapView = (Component: React.FC, maxWidth = 'max-w-2xl') => {
   const Wrapped = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4 flex justify-center">
-      <div className={`w-full ${maxWidth} h-full`}><Component /></div>
+      <div className={`w-full ${maxWidth} h-full`}><Suspense fallback={<Skeleton />}><Component /></Suspense></div>
     </motion.div>
   );
   return Wrapped;
@@ -116,31 +129,31 @@ const wrapView = (Component: React.FC, maxWidth = 'max-w-2xl') => {
 
 const TerminalView = () => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-    <div className="h-full max-w-4xl mx-auto"><TerminalWidget /></div>
+    <div className="h-full max-w-4xl mx-auto"><Suspense fallback={<Skeleton />}><TerminalWidget /></Suspense></div>
   </motion.div>
 );
 
 const CalculatorView = () => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4 flex justify-center items-center">
-    <div className="w-full max-w-sm"><CalculatorWidget /></div>
+    <div className="w-full max-w-sm"><Suspense fallback={<Skeleton />}><CalculatorWidget /></Suspense></div>
   </motion.div>
 );
 
   const ChatUnifiedView = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-      <div className="h-full max-w-4xl mx-auto"><AIChatUnified /></div>
+      <div className="h-full max-w-4xl mx-auto"><Suspense fallback={<Skeleton />}><AIChatUnified /></Suspense></div>
     </motion.div>
   );
 
   const SystemView = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-      <div className="h-full max-w-4xl mx-auto"><SystemMonitorWidgetEnhanced /></div>
+      <div className="h-full max-w-4xl mx-auto"><Suspense fallback={<Skeleton />}><SystemMonitorWidgetEnhanced /></Suspense></div>
     </motion.div>
   );
 
   const TerminalEnhancedView = () => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4">
-      <div className="h-full max-w-4xl mx-auto"><TerminalWidgetEnhanced /></div>
+      <div className="h-full max-w-4xl mx-auto"><Suspense fallback={<Skeleton />}><TerminalWidgetEnhanced /></Suspense></div>
     </motion.div>
   );
 
@@ -158,7 +171,7 @@ const WidgetManagerView = () => (
 
 const JournalView = () => (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full p-4 flex justify-center">
-    <div className="w-full max-w-2xl h-full"><JournalWidget /></div>
+    <div className="w-full max-w-2xl h-full"><Suspense fallback={<Skeleton />}><JournalWidget /></Suspense></div>
   </motion.div>
 );
 
@@ -305,7 +318,7 @@ export default function App() {
           {showAmbientMode && <AmbientMode onClose={() => setShowAmbientMode(false)} />}
         </AnimatePresence>
 
-        {!bootDone && <BootSequence onComplete={() => setBootDone(true)} />}
+        {!bootDone && <Suspense fallback={null}><BootSequence onComplete={() => setBootDone(true)} /></Suspense>}
 
         {/* Main content area - takes remaining space */}
         <div className="flex-1 overflow-hidden">
@@ -347,7 +360,7 @@ export default function App() {
                   <Keyboard className="w-3 h-3" />
                   KEYS
                 </button>
-                <button onClick={toggleFullscreen} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[#1a1a3a] bg-[#0a0a1a]/60 text-[10px] font-mono text-white/40 hover:text-white/70 transition-colors">
+                <button onClick={toggleFullscreen} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-[#1a1a3a] bg-[#0a0a1a]/60 text-[10px] font-mono text-white/40 hover:text-white/70 transition-colors" aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}>
                   {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
                 </button>
               </div>

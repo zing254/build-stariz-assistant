@@ -49,8 +49,9 @@ describe('Toast', () => {
   it('should remove toast after timeout', async () => {
     render(<ToastContainer />);
     
-    toast.success('Temporary message', 100);
+    toast.success('Temporary message', 200);
     
+    // Toast should be visible before timeout
     await new Promise(resolve => setTimeout(resolve, 100));
     expect(screen.getByText('Temporary message')).toBeInTheDocument();
     

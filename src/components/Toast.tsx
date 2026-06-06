@@ -70,7 +70,7 @@ export function ToastContainer() {
           >
             {icons[t.type]}
             <span className="text-xs font-mono text-white/80 flex-1">{t.message}</span>
-            <button onClick={() => removeToast(t.id)} className="text-white/30 hover:text-white/60">
+            <button onClick={() => removeToast(t.id)} className="text-white/30 hover:text-white/60" aria-label="Dismiss notification">
               <X className="w-3.5 h-3.5" />
             </button>
           </motion.div>

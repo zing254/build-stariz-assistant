@@ -87,7 +87,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
             className="w-full bg-[#0f0f2a] border border-[#1a1a3a] rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-[#00f0ff]/30 focus:outline-none focus:border-[#00f0ff]/50 focus:shadow-[0_0_15px_#00f0ff22] transition-all font-mono"
           />
-          <button type="button" className="absolute right-3 text-[#00f0ff]/40 hover:text-[#00f0ff]">
+          <button type="button" className="absolute right-3 text-[#00f0ff]/40 hover:text-[#00f0ff]" aria-label="Voice search">
             <Mic className="w-4 h-4" />
           </button>
         </motion.form>

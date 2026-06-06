@@ -150,7 +150,7 @@ export default function ApiKeyManager({ open, onClose }: ApiKeyManagerProps) {
                 <Key className="w-5 h-5 text-[#00f0ff]" />
                 <h2 className="text-sm font-display font-bold text-white">AI API Configuration</h2>
               </div>
-              <button onClick={onClose} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+              <button onClick={onClose} className="text-white/40 hover:text-white" aria-label="Close API key manager"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Provider */}
@@ -191,7 +191,7 @@ export default function ApiKeyManager({ open, onClose }: ApiKeyManagerProps) {
                   placeholder={`Enter your ${preset.name} API key`}
                   className="w-full bg-[#0a0a1a] border border-[#1a1a3a] rounded-lg pl-3 pr-10 py-2.5 text-xs font-mono text-white placeholder:text-white/20 focus:outline-none focus:border-[#00f0ff]/50"
                 />
-                <button onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60">
+                <button onClick={() => setShowKey(!showKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60" aria-label={showKey ? 'Hide API key' : 'Show API key'}>
                   {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>

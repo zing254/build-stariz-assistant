@@ -4,6 +4,7 @@ import {
   StickyNote, Bold, Italic, Underline, List, ListOrdered,
   Code, Eye, EyeOff, Trash2, Plus, Copy,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { generateId } from '../../utils/helpers';
 import { toast } from '../Toast';
@@ -46,7 +47,6 @@ export default function NotesRichTextWidget() {
   }, [notes, activeNoteId]);
 
   const renderMarkdown = (text: string): string => {
-    // Simple Markdown parser (in production, use a library like marked or remark)
     const html = text
       // Headers
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -67,7 +67,7 @@ export default function NotesRichTextWidget() {
       .replace(/\n\n/g, '<br/><br/>')
       .replace(/\n/g, '<br/>');
 
-    return html;
+    return DOMPurify.sanitize(html);
   };
 
   const updateNoteContent = (content: string) => {

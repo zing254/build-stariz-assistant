@@ -119,6 +119,10 @@ class STARIZAICore:
         self._initialized = True
         logger.info(f"STARIZ AI Core initialized (model: {self.default_model})")
 
+    @property
+    def _use_openrouter(self) -> bool:
+        return os.environ.get("STARIZ_USE_OPENROUTER", "").lower() == "true"
+
     def _load_memory(self):
         """Load persistent memory from disk."""
         history_file = MEMORY_DIR / f"chat_history_{self.session_id}.json"
@@ -353,17 +357,37 @@ When user wants to go somewhere, suggest: "Navigate to [widget name] in the side
 
                 try:
                     async with httpx.AsyncClient(timeout=300) as client:
-                        resp = await client.post(
-                            f"{self.ollama_url}/api/chat",
-                            json={
-                                "model": model or self.default_model,
-                                "messages": messages,
-                                "stream": False,
-                                "options": {"temperature": 0.7, "top_p": 0.9, "num_ctx": 8192},
-                            }
-                        )
-                        data = resp.json()
-                        response = data.get("message", {}).get("content", "")
+                        if self._use_openrouter:
+                            api_key = os.environ.get("OPENROUTER_API_KEY", "")
+                            openrouter_model = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
+                            resp = await client.post(
+                                "https://openrouter.ai/api/v1/chat/completions",
+                                json={
+                                    "model": openrouter_model,
+                                    "messages": messages,
+                                    "stream": False,
+                                    "temperature": 0.7,
+                                    "top_p": 0.9,
+                                },
+                                headers={
+                                    "Authorization": f"Bearer {api_key}",
+                                    "Content-Type": "application/json",
+                                },
+                            )
+                            data = resp.json()
+                            response = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                        else:
+                            resp = await client.post(
+                                f"{self.ollama_url}/api/chat",
+                                json={
+                                    "model": model or self.default_model,
+                                    "messages": messages,
+                                    "stream": False,
+                                    "options": {"temperature": 0.7, "top_p": 0.9, "num_ctx": 8192},
+                                }
+                            )
+                            data = resp.json()
+                            response = data.get("message", {}).get("content", "")
                 except Exception as e:
                     logger.error(f"Tool chain error: {e}")
                     response = self._strip_tool_calls(response) + f"\n\n[Tool execution error: {str(e)}]"
@@ -476,21 +500,41 @@ When user wants to go somewhere, suggest: "Navigate to [widget name] in the side
 
         try:
             async with httpx.AsyncClient(timeout=300) as client:
-                response = await client.post(
-                    f"{self.ollama_url}/api/chat",
-                    json={
-                        "model": model or self.default_model,
-                        "messages": messages,
-                        "stream": False,
-                        "options": {
+                if self._use_openrouter:
+                    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+                    openrouter_model = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
+                    response = await client.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        json={
+                            "model": openrouter_model,
+                            "messages": messages,
+                            "stream": False,
                             "temperature": 0.7,
                             "top_p": 0.9,
-                            "num_ctx": 8192,
+                        },
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                        },
+                    )
+                    data = response.json()
+                    assistant_reply = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                else:
+                    response = await client.post(
+                        f"{self.ollama_url}/api/chat",
+                        json={
+                            "model": model or self.default_model,
+                            "messages": messages,
+                            "stream": False,
+                            "options": {
+                                "temperature": 0.7,
+                                "top_p": 0.9,
+                                "num_ctx": 8192,
+                            }
                         }
-                    }
-                )
-                data = response.json()
-                assistant_reply = data.get("message", {}).get("content", "")
+                    )
+                    data = response.json()
+                    assistant_reply = data.get("message", {}).get("content", "")
 
                 # Check for tool calls and execute them
                 tool_calls = self._parse_tool_calls(assistant_reply)
@@ -548,32 +592,71 @@ When user wants to go somewhere, suggest: "Navigate to [widget name] in the side
 
         try:
             async with httpx.AsyncClient(timeout=300) as client:
-                async with client.stream(
-                    "POST",
-                    f"{self.ollama_url}/api/chat",
-                    json={
-                        "model": model or self.default_model,
-                        "messages": messages,
-                        "stream": True,
-                        "options": {
+                if self._use_openrouter:
+                    api_key = os.environ.get("OPENROUTER_API_KEY", "")
+                    openrouter_model = os.environ.get("OPENROUTER_MODEL", "openrouter/auto")
+                    async with client.stream(
+                        "POST",
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        json={
+                            "model": openrouter_model,
+                            "messages": messages,
+                            "stream": True,
                             "temperature": 0.7,
                             "top_p": 0.9,
-                            "num_ctx": 8192,
-                        }
-                    }
-                ) as response:
-                    async for line in response.aiter_lines():
-                        if line.strip():
-                            try:
-                                data = json.loads(line)
-                                chunk = data.get("message", {}).get("content", "")
-                                if chunk:
-                                    full_response += chunk
-                                    yield chunk
-                                if data.get("done", False):
+                        },
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "Content-Type": "application/json",
+                        },
+                    ) as response:
+                        async for line in response.aiter_lines():
+                            if line.strip():
+                                if line.strip() == "data: [DONE]":
                                     break
-                            except json.JSONDecodeError:
-                                continue
+                                try:
+                                    if line.startswith("data: "):
+                                        data = json.loads(line[6:])
+                                    else:
+                                        data = json.loads(line)
+                                    choices = data.get("choices", [])
+                                    if choices:
+                                        delta = choices[0].get("delta", {})
+                                        chunk = delta.get("content", "")
+                                        if chunk:
+                                            full_response += chunk
+                                            yield chunk
+                                        if choices[0].get("finish_reason") is not None:
+                                            break
+                                except json.JSONDecodeError:
+                                    continue
+                else:
+                    async with client.stream(
+                        "POST",
+                        f"{self.ollama_url}/api/chat",
+                        json={
+                            "model": model or self.default_model,
+                            "messages": messages,
+                            "stream": True,
+                            "options": {
+                                "temperature": 0.7,
+                                "top_p": 0.9,
+                                "num_ctx": 8192,
+                            }
+                        }
+                    ) as response:
+                        async for line in response.aiter_lines():
+                            if line.strip():
+                                try:
+                                    data = json.loads(line)
+                                    chunk = data.get("message", {}).get("content", "")
+                                    if chunk:
+                                        full_response += chunk
+                                        yield chunk
+                                    if data.get("done", False):
+                                        break
+                                except json.JSONDecodeError:
+                                    continue
 
             # After streaming completes, check for and execute tool calls
             tool_calls = self._parse_tool_calls(full_response)

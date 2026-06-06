@@ -1,53 +1,68 @@
+import React, { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useWidgetLayout } from '../hooks/useWidgetLayout';
-import {
-  ClockWidget, WeatherWidget, TasksWidget, NotesWidget, SystemMonitorWidget
-} from './widgets/Widgets1';
-import {
-  CalendarWidget, VoiceAssistantWidget, NewsWidget, CalculatorWidget
-} from './widgets/Widgets2';
-import {
-  PomodoroWidget, WorldClockWidget, QuickLinksWidget,
-  SecurityWidget, NetworkWidget, AICoreWidget
-} from './widgets/Widgets3';
-import {
-  CryptoWidget, QuotesWidget, StopwatchWidget, PasswordWidget,
-  ConverterWidget, ColorWidget, JsonWidget, ToolsWidget,
-  ClipboardWidget, IpWidget, BreatheWidget
-} from './widgets/Widgets4';
-import MusicPlayerWidget from './widgets/MusicPlayer';
 import {
   Maximize2, Minimize2, EyeOff
 } from 'lucide-react';
 
+const ClockWidget = React.lazy(() => import('./widgets/widgets/ClockWidget').then(m => ({ default: m.ClockWidget })));
+const WeatherWidget = React.lazy(() => import('./widgets/widgets/WeatherWidget').then(m => ({ default: m.WeatherWidget })));
+const TasksWidget = React.lazy(() => import('./widgets/widgets/TasksWidget').then(m => ({ default: m.TasksWidget })));
+const NotesWidget = React.lazy(() => import('./widgets/widgets/NotesWidget').then(m => ({ default: m.NotesWidget })));
+const SystemMonitorWidget = React.lazy(() => import('./widgets/widgets/SystemMonitorWidget').then(m => ({ default: m.SystemMonitorWidget })));
+const CalendarWidget = React.lazy(() => import('./widgets/widgets/CalendarWidget').then(m => ({ default: m.CalendarWidget })));
+const VoiceAssistantWidget = React.lazy(() => import('./widgets/widgets/VoiceAssistantWidget').then(m => ({ default: m.VoiceAssistantWidget })));
+const NewsWidget = React.lazy(() => import('./widgets/widgets/NewsWidget').then(m => ({ default: m.NewsWidget })));
+const CalculatorWidget = React.lazy(() => import('./widgets/widgets/CalculatorWidget').then(m => ({ default: m.CalculatorWidget })));
+const PomodoroWidget = React.lazy(() => import('./widgets/widgets/PomodoroWidget').then(m => ({ default: m.PomodoroWidget })));
+const WorldClockWidget = React.lazy(() => import('./widgets/widgets/WorldClockWidget').then(m => ({ default: m.WorldClockWidget })));
+const QuickLinksWidget = React.lazy(() => import('./widgets/widgets/QuickLinksWidget').then(m => ({ default: m.QuickLinksWidget })));
+const SecurityWidget = React.lazy(() => import('./widgets/widgets/SecurityWidget').then(m => ({ default: m.SecurityWidget })));
+const NetworkWidget = React.lazy(() => import('./widgets/widgets/NetworkWidget').then(m => ({ default: m.NetworkWidget })));
+const AICoreWidget = React.lazy(() => import('./widgets/widgets/AICoreWidget').then(m => ({ default: m.AICoreWidget })));
+const CryptoWidget = React.lazy(() => import('./widgets/widgets/CryptoWidget').then(m => ({ default: m.CryptoWidget })));
+const QuotesWidget = React.lazy(() => import('./widgets/widgets/QuotesWidget').then(m => ({ default: m.QuotesWidget })));
+const StopwatchWidget = React.lazy(() => import('./widgets/widgets/StopwatchWidget').then(m => ({ default: m.StopwatchWidget })));
+const PasswordWidget = React.lazy(() => import('./widgets/widgets/PasswordWidget').then(m => ({ default: m.PasswordWidget })));
+const ConverterWidget = React.lazy(() => import('./widgets/widgets/ConverterWidget').then(m => ({ default: m.ConverterWidget })));
+const ColorWidget = React.lazy(() => import('./widgets/widgets/ColorWidget').then(m => ({ default: m.ColorWidget })));
+const JsonWidget = React.lazy(() => import('./widgets/widgets/JsonWidget').then(m => ({ default: m.JsonWidget })));
+const ToolsWidget = React.lazy(() => import('./widgets/widgets/ToolsWidget').then(m => ({ default: m.ToolsWidget })));
+const ClipboardWidget = React.lazy(() => import('./widgets/widgets/ClipboardWidget').then(m => ({ default: m.ClipboardWidget })));
+const IpWidget = React.lazy(() => import('./widgets/widgets/IpWidget').then(m => ({ default: m.IpWidget })));
+const BreatheWidget = React.lazy(() => import('./widgets/widgets/BreatheWidget').then(m => ({ default: m.BreatheWidget })));
+const MusicPlayerWidget = React.lazy(() => import('./widgets/MusicPlayer'));
+
+const Skeleton = () => <div className="skeleton h-full rounded-lg bg-[#0f0f2a]/50 animate-pulse" />;
+
 const WIDGET_COMPONENTS: Record<string, React.FC> = {
-  clock: ClockWidget,
-  weather: WeatherWidget,
-  system: SystemMonitorWidget,
-  pomodoro: PomodoroWidget,
-  tasks: TasksWidget,
-  voice: VoiceAssistantWidget,
-  news: NewsWidget,
-  calendar: CalendarWidget,
-  music: MusicPlayerWidget,
-  notes: NotesWidget,
-  calc: CalculatorWidget,
-  crypto: CryptoWidget,
-  quotes: QuotesWidget,
-  stopwatch: StopwatchWidget,
-  password: PasswordWidget,
-  converter: ConverterWidget,
-  color: ColorWidget,
-  json: JsonWidget,
-  devtools: ToolsWidget,
-  clipboard: ClipboardWidget,
-  ip: IpWidget,
-  breathe: BreatheWidget,
-  world: WorldClockWidget,
-  links: QuickLinksWidget,
-  security: SecurityWidget,
-  network: NetworkWidget,
-  ai: AICoreWidget,
+  clock: () => <Suspense fallback={<Skeleton />}><ClockWidget /></Suspense>,
+  weather: () => <Suspense fallback={<Skeleton />}><WeatherWidget /></Suspense>,
+  system: () => <Suspense fallback={<Skeleton />}><SystemMonitorWidget /></Suspense>,
+  pomodoro: () => <Suspense fallback={<Skeleton />}><PomodoroWidget /></Suspense>,
+  tasks: () => <Suspense fallback={<Skeleton />}><TasksWidget /></Suspense>,
+  voice: () => <Suspense fallback={<Skeleton />}><VoiceAssistantWidget /></Suspense>,
+  news: () => <Suspense fallback={<Skeleton />}><NewsWidget /></Suspense>,
+  calendar: () => <Suspense fallback={<Skeleton />}><CalendarWidget /></Suspense>,
+  music: () => <Suspense fallback={<Skeleton />}><MusicPlayerWidget /></Suspense>,
+  notes: () => <Suspense fallback={<Skeleton />}><NotesWidget /></Suspense>,
+  calc: () => <Suspense fallback={<Skeleton />}><CalculatorWidget /></Suspense>,
+  crypto: () => <Suspense fallback={<Skeleton />}><CryptoWidget /></Suspense>,
+  quotes: () => <Suspense fallback={<Skeleton />}><QuotesWidget /></Suspense>,
+  stopwatch: () => <Suspense fallback={<Skeleton />}><StopwatchWidget /></Suspense>,
+  password: () => <Suspense fallback={<Skeleton />}><PasswordWidget /></Suspense>,
+  converter: () => <Suspense fallback={<Skeleton />}><ConverterWidget /></Suspense>,
+  color: () => <Suspense fallback={<Skeleton />}><ColorWidget /></Suspense>,
+  json: () => <Suspense fallback={<Skeleton />}><JsonWidget /></Suspense>,
+  devtools: () => <Suspense fallback={<Skeleton />}><ToolsWidget /></Suspense>,
+  clipboard: () => <Suspense fallback={<Skeleton />}><ClipboardWidget /></Suspense>,
+  ip: () => <Suspense fallback={<Skeleton />}><IpWidget /></Suspense>,
+  breathe: () => <Suspense fallback={<Skeleton />}><BreatheWidget /></Suspense>,
+  world: () => <Suspense fallback={<Skeleton />}><WorldClockWidget /></Suspense>,
+  links: () => <Suspense fallback={<Skeleton />}><QuickLinksWidget /></Suspense>,
+  security: () => <Suspense fallback={<Skeleton />}><SecurityWidget /></Suspense>,
+  network: () => <Suspense fallback={<Skeleton />}><NetworkWidget /></Suspense>,
+  ai: () => <Suspense fallback={<Skeleton />}><AICoreWidget /></Suspense>,
 };
 
 const SIZE_CLASSES: Record<string, { col: string; height: string }> = {
@@ -75,7 +90,6 @@ export default function Dashboard() {
                 className={`${size.col} ${isExpanded ? 'col-span-12 md:col-span-12' : ''} relative group transition-all duration-300`}
                 style={{ height: isExpanded ? '500px' : size.height }}
               >
-                {/* Hover controls */}
                 <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => cycleSize(config.id)}

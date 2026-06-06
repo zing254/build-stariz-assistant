@@ -1,21 +1,22 @@
-# Deployment Guide — STARIZ AI Assistant v2.7.0
+# Deployment Guide — STARIZ AI Assistant v3.0.0
 
 ## Free Deployment Options
 
-### Frontend: Vercel (Free) ✅ Already Deployed
+### Frontend: Vercel (Free) ✅ Auto-Deployed
 - **URL**: https://build-stariz-assistant.vercel.app
+- **Auto-deploy**: Push to `main` branch triggers automatic deployment
 - **Cost**: $0 (free tier)
 - **Limits**: 100GB bandwidth/month, serverless functions
 
-### Backend: Render (Free)
-- **Cost**: $0 (free tier)
-- **Limits**: 512MB RAM, 0.1 CPU, spins down after 15min idle
-- **Setup**: See instructions below
+### Backend: Render or Koyeb (Free)
+Two backend AI options:
 
-### Backend Alternative: Koyeb (Free)
-- **Cost**: $0 (free tier)
-- **Limits**: 512MB RAM, 0.1 CPU, always-on
-- **Setup**: Similar to Render
+**Option A: OpenRouter API (Recommended for free deployment)**
+- Set `STARIZ_USE_OPENROUTER=true` and `OPENROUTER_API_KEY` — no Ollama needed
+- Works on any hosting platform (Render, Koyeb, Railway, Fly.io)
+
+**Option B: Ollama (Requires GPU/server with Ollama)**
+- Needs a server running Ollama (see Ollama section below)
 
 ---
 
@@ -44,37 +45,21 @@ In Render dashboard → Environment tab:
 
 | Variable | Value |
 |----------|-------|
-| `STARIZ_MODEL` | `qwen3:4b` |
-| `OLLAMA_URL` | Your Ollama server URL (see below) |
+| `STARIZ_USE_OPENROUTER` | `true` |
+| `OPENROUTER_API_KEY` | `sk-or-v1-...` (your key) |
+| `OPENROUTER_MODEL` | `openrouter/auto` (or specific model) |
 | `LOG_LEVEL` | `info` |
+| `CORS_ORIGINS` | `https://build-stariz-assistant.vercel.app` |
 
-### Step 4: Ollama Server (Required)
-Render free tier doesn't support running Ollama. Options:
-
-**Option A: Use a Cloud Ollama Provider**
-- [Groq](https://groq.com) - Free API, compatible with Ollama format
-- [Together AI](https://together.ai) - Free credits
-- Update `OLLAMA_URL` to point to their API
-
-**Option B: Self-Host Ollama**
-- Run Ollama on your local machine
-- Use ngrok to expose it: `ngrok http 11434`
-- Set `OLLAMA_URL` to the ngrok URL
-
-**Option C: Use OpenRouter (Free Models)**
-- Some models are free on OpenRouter
-- Modify `ai_core.py` to use OpenRouter API
-
-### Step 5: Deploy
+### Step 4: Deploy
 1. Click **Create Web Service**
 2. Wait for build (~2-3 minutes)
 3. Copy the service URL (e.g., `https://stariz-backend.onrender.com`)
 
-### Step 6: Update Frontend
-Set the backend URL in Vercel:
+### Step 5: Link Frontend
 1. Go to Vercel dashboard → Your project → Settings → Environment Variables
 2. Add: `VITE_PYTHON_BACKEND_URL=https://stariz-backend.onrender.com`
-3. Redeploy frontend
+3. Redeploy frontend (or push to main for auto-deploy)
 
 ---
 
@@ -108,24 +93,22 @@ Same as Render (Step 3 above)
 ## Local Development
 
 ```bash
-# Start everything
+# Start everything (requires Ollama)
 ./start.sh
 
 # Or manually:
-# Terminal 1: Backend
+# Terminal 1: Backend (Ollama or OpenRouter)
 cd backend && python main.py
 
 # Terminal 2: Frontend
 npm run dev
 ```
 
----
-
 ## Production Build
 
 ```bash
 ./build.sh
-# Output: dist/index.html (single file, ~720KB, gzip ~204KB)
+# Output: dist/index.html (single file, ~728KB, gzip ~204KB)
 ```
 
 ---
@@ -145,12 +128,19 @@ Requires: [Docker](https://docs.docker.com/engine/install/) and [Docker Compose]
 
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
-| `OLLAMA_URL` | `http://localhost:11434` | ✅ | Ollama server URL |
-| `STARIZ_MODEL` | `qwen3:4b` | ✅ | AI model name |
+| `OLLAMA_URL` | `http://localhost:11434` | ❌* | Ollama server URL |
+| `STARIZ_MODEL` | `Tinyllama:latest` | ❌* | Ollama AI model name |
+| `STARIZ_USE_OPENROUTER` | `false` | ❌ | Set `true` to use OpenRouter instead of Ollama |
+| `OPENROUTER_API_KEY` | _(empty)_ | ❌* | OpenRouter API key |
+| `OPENROUTER_MODEL` | `openrouter/auto` | ❌ | OpenRouter model to use |
 | `VITE_PYTHON_BACKEND_URL` | `http://localhost:8000` | ✅ (frontend) | Backend URL |
 | `STARIZ_API_TOKEN` | _(empty)_ | ❌ | API auth token |
 | `LOG_LEVEL` | `info` | ❌ | Logging level |
 | `PYTHONUNBUFFERED` | `1` | ❌ | Python output |
+| `CORS_ORIGINS` | `*` | ❌ | Comma-separated allowed origins |
+| `CSP_ENABLED` | `false` | ❌ | Enable Content Security Policy |
+
+\* Either Ollama OR OpenRouter config is required.
 
 See `.env.example` for a complete template.
 
@@ -162,16 +152,16 @@ See `.env.example` for a complete template.
 - Check logs in Render dashboard
 - Ensure `backend/requirements.txt` is in the repo root
 - Verify Python version is 3.12+
+- If using OpenRouter, verify `OPENROUTER_API_KEY` is set
 
 ### Frontend can't connect to backend
 - Check `VITE_PYTHON_BACKEND_URL` is set correctly
 - Ensure backend is running and accessible
-- Check CORS settings in `main.py`
+- Check CORS settings — set `CORS_ORIGINS` to your frontend URL
 
 ### Ollama not available
 - Free tier Render can't run Ollama locally
-- Use a cloud provider or self-host with ngrok
-- Consider using Groq or Together AI as alternatives
+- Use OpenRouter instead: set `STARIZ_USE_OPENROUTER=true`
 
 ### Build fails on Vercel
 - Ensure `--legacy-peer-deps` is in `vercel.json`

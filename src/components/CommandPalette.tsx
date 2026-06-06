@@ -34,7 +34,7 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
     // Navigation
     { id: 'nav-dashboard', label: 'Dashboard', description: 'Go to main dashboard', icon: Command, action: () => onNavigate('dashboard'), category: 'Navigation' },
     { id: 'nav-chat', label: 'AI GODMODE', description: 'Full AI with memory, RAG, voice', icon: Zap, action: () => onNavigate('chat'), category: 'Navigation', keywords: ['godmode', 'ai', 'stariz'] },
-    { id: 'nav-chat-classic', label: 'AI Chat Classic', description: 'Standard AI chat', icon: MessageSquare, action: () => onNavigate('chat-classic'), category: 'Navigation' },
+    { id: 'nav-chat-classic', label: 'AI Chat', description: 'Standard AI chat', icon: MessageSquare, action: () => onNavigate('chat'), category: 'Navigation' },
     { id: 'nav-voice', label: 'Voice Assistant', description: 'Offline voice control', icon: Zap, action: () => onNavigate('voice'), category: 'Navigation', keywords: ['voice', 'speak', 'listen'] },
     { id: 'nav-knowledge', label: 'Knowledge Base', description: 'RAG document search', icon: Database, action: () => onNavigate('knowledge'), category: 'Navigation', keywords: ['rag', 'docs', 'search'] },
     { id: 'nav-memory', label: 'Memory System', description: 'Browse AI memories', icon: Database, action: () => onNavigate('memory'), category: 'Navigation', keywords: ['memory', 'remember'] },
