@@ -40,7 +40,7 @@ export default function StatusBar() {
       setCpuUsage(Math.floor(Math.random() * 30) + 5);
       // Get message count from localStorage
       try {
-        const chat = localStorage.getItem('stariz-chat-history');
+        const chat = localStorage.getItem('stariz-chat-history-v2');
         if (chat) {
           const msgs = JSON.parse(chat);
           setMessageCount(msgs.length);
@@ -99,7 +99,7 @@ export default function StatusBar() {
       <div className="flex items-center gap-3 md:gap-4">
         <span className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-[#00ff88] animate-pulse" />
-          <span className="hidden md:inline text-white/50">STARIZ AI v2.4.1</span>
+          <span className="hidden md:inline text-white/50">STARIZ AI v3.0.0</span>
         </span>
         <span className="hidden lg:inline text-white/20">|</span>
         <span className="hidden lg:inline text-white/30">NEURAL LINK: STABLE</span>

@@ -19,6 +19,8 @@ export function AgentStatus() {
 
   const executeTask = async () => {
     if (!task.trim() || isRunning) return;
+    const approved = window.confirm('The agent may inspect files and execute system tools. Continue?');
+    if (!approved) return;
     setIsRunning(true);
     setResult(null);
     setSteps([]);

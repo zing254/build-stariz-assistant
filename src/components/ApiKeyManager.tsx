@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Key, Eye, EyeOff, Check, Trash2, ExternalLink } from 'lucide-react';
+import { X, Key, Eye, EyeOff, Check, Trash2, ExternalLink, RefreshCw, Plus } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { toast } from './Toast';
 
@@ -77,8 +77,50 @@ export default function ApiKeyManager({ open, onClose }: ApiKeyManagerProps) {
   const [baseUrl, setBaseUrl] = useState(stored?.baseUrl || PRESETS.openrouter.baseUrl);
   const [showKey, setShowKey] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [loadingModels, setLoadingModels] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [customModel, setCustomModel] = useState('');
 
   const preset = PRESETS[provider];
+  const modelOptions = Array.from(new Set([...preset.models, ...availableModels]));
+
+  // OpenRouter changes its free catalogue frequently. Fetch it instead of
+  // shipping stale model IDs, while retaining the built-in list as a fallback.
+  const loadOpenRouterFreeModels = async () => {
+    if (provider !== 'openrouter' || !key.trim()) {
+      toast.info('Enter an OpenRouter key first');
+      return;
+    }
+    setLoadingModels(true);
+    try {
+      const response = await fetch(`${preset.baseUrl}/models`, {
+        headers: { Authorization: `Bearer ${key.trim()}` },
+      });
+      if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
+      const data = await response.json();
+      const free = (data.data || [])
+        .filter((item: { id?: string; pricing?: { prompt?: string; completion?: string } }) =>
+          item.id && (item.id.endsWith(':free') || (item.pricing?.prompt === '0' && item.pricing?.completion === '0')))
+        .map((item: { id: string }) => item.id)
+        .sort();
+      setAvailableModels(free);
+      if (free.length) setModel(free[0]);
+      toast.success(`${free.length} free OpenRouter models loaded`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not load OpenRouter models');
+    } finally {
+      setLoadingModels(false);
+    }
+  };
+
+  const addCustomModel = () => {
+    const value = customModel.trim();
+    if (!value) return;
+    setAvailableModels((current) => Array.from(new Set([...current, value])));
+    setModel(value);
+    setCustomModel('');
+    toast.success('Model added');
+  };
 
   const handleSave = () => {
     if (!key.trim()) { toast.error('API key is required'); return; }
@@ -205,8 +247,24 @@ export default function ApiKeyManager({ open, onClose }: ApiKeyManagerProps) {
                 onChange={(e) => setModel(e.target.value)}
                 className="w-full bg-[#0a0a1a] border border-[#1a1a3a] rounded-lg px-3 py-2.5 text-xs font-mono text-white focus:outline-none focus:border-[#00f0ff]/50"
               >
-                {preset.models.map((m) => <option key={m} value={m}>{m}</option>)}
+                {modelOptions.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomModel(); } }}
+                  placeholder="Add model ID, e.g. provider/model:free"
+                  className="min-w-0 flex-1 bg-[#0a0a1a] border border-[#1a1a3a] rounded-lg px-3 py-2 text-[10px] font-mono text-white placeholder:text-white/20 focus:outline-none focus:border-[#00f0ff]/50"
+                />
+                <button type="button" onClick={addCustomModel} className="px-2 rounded-lg border border-[#1a1a3a] text-white/60 hover:text-[#00f0ff]" aria-label="Add model"><Plus className="w-4 h-4" /></button>
+                {provider === 'openrouter' && (
+                  <button type="button" onClick={loadOpenRouterFreeModels} disabled={loadingModels} className="px-2 rounded-lg border border-[#00ff88]/30 text-[#00ff88] hover:bg-[#00ff88]/10 disabled:opacity-50" title="Load current free OpenRouter models" aria-label="Refresh free OpenRouter models">
+                    <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-[9px] text-white/30">Add any OpenRouter model ID. Use Refresh to load the current free catalogue.</p>
             </div>
 
             {/* Custom Base URL */}

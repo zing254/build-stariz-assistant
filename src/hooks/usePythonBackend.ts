@@ -50,13 +50,15 @@ export function usePythonBackend(): UsePythonBackendReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptsRef = useRef(0);
+  const shouldReconnectRef = useRef(true);
 
   const connect = useCallback(() => {
+    shouldReconnectRef.current = true;
+    if (wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) return;
     try {
       const ws = new WebSocket(`${WS_URL}/ws/frontend-${Date.now()}`);
 
       ws.onopen = () => {
-        console.log('Connected to Python backend');
         setConnected(true);
         reconnectAttemptsRef.current = 0;
       };
@@ -74,21 +76,25 @@ export function usePythonBackend(): UsePythonBackendReturn {
       };
 
       ws.onclose = () => {
-        console.log('Disconnected from Python backend');
+        if (wsRef.current === ws) wsRef.current = null;
         setConnected(false);
         setSystemStats(null);
 
-        // Attempt to reconnect
-        if (reconnectAttemptsRef.current < 5) {
+        // Reconnect only while the hook is mounted. The old behavior kept
+        // reconnecting after unmount, creating orphan sockets and timers.
+        if (shouldReconnectRef.current && reconnectAttemptsRef.current < 6) {
+          reconnectAttemptsRef.current += 1;
+          const delay = Math.min(1000 * 2 ** (reconnectAttemptsRef.current - 1), 15000);
           reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttemptsRef.current += 1;
-            connect();
-          }, 2000 * reconnectAttemptsRef.current);
+            reconnectTimeoutRef.current = null;
+            if (shouldReconnectRef.current) connect();
+          }, delay);
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+      ws.onerror = () => {
+        // onclose handles the retry; avoid noisy console errors for an
+        // expected offline backend.
       };
 
       wsRef.current = ws;
@@ -98,14 +104,19 @@ export function usePythonBackend(): UsePythonBackendReturn {
   }, []);
 
   const disconnect = useCallback(() => {
+    shouldReconnectRef.current = false;
+    reconnectAttemptsRef.current = 0;
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
     if (wsRef.current) {
-      wsRef.current.close();
+      const socket = wsRef.current;
       wsRef.current = null;
+      socket.close();
     }
     setConnected(false);
+    setSystemStats(null);
   }, []);
 
   const sendMessage = useCallback((message: WebSocketMessage) => {

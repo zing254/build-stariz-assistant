@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { exportData, importData } from '../../../utils/helpers';
@@ -11,6 +11,16 @@ export function SettingsWidget() {
   const [animations, setAnimations] = useLocalStorage('stariz-animations', true);
   const [compact, setCompact] = useLocalStorage('stariz-compact', false);
   const [confirmClear, setConfirmClear] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.style.colorScheme = theme === 'ice' ? 'light' : 'dark';
+  }, [theme]);
+
+  const changeTheme = (nextTheme: string) => {
+    setTheme(nextTheme);
+    window.dispatchEvent(new CustomEvent('stariz-theme-change', { detail: nextTheme }));
+  };
 
   const themes = [
     { id: 'cyber', name: 'Cyberpunk', primary: '#00f0ff', secondary: '#ff00a0' },
@@ -62,7 +72,7 @@ export function SettingsWidget() {
             {themes.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setTheme(t.id)}
+                onClick={() => changeTheme(t.id)}
                 className={`p-2 rounded border text-xs font-mono transition-all ${
                   theme === t.id
                     ? 'border-[#00f0ff]/40 bg-[#00f0ff]/10 text-[#00f0ff]'
@@ -131,7 +141,7 @@ export function SettingsWidget() {
         <div className="pt-3 border-t border-[#1a1a3a]">
           <div className="text-[10px] font-mono text-white/30 mb-2 uppercase tracking-wider">System Info</div>
           <div className="space-y-1.5 text-[10px] font-mono text-white/40">
-            <div className="flex justify-between"><span>App</span><span className="text-white/60">STARIZ AI v2.4.1</span></div>
+            <div className="flex justify-between"><span>App</span><span className="text-white/60">STARIZ AI v3.0.0</span></div>
             <div className="flex justify-between"><span>Build</span><span className="text-white/60">2026.01.15-stable</span></div>
             <div className="flex justify-between"><span>Stack</span><span className="text-white/60">React 19 + Tailwind 4</span></div>
             <div className="flex justify-between"><span>Platform</span><span className="text-white/60">{navigator.platform}</span></div>

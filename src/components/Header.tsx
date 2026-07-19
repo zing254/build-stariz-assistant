@@ -14,7 +14,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { systemStats } = usePythonBackend();
-  const [theme, setTheme] = useLocalStorage('stariz-theme', 'dark');
+  const [theme, setTheme] = useLocalStorage('stariz-theme', 'cyber');
 
   const cpuUsage = systemStats?.cpu_percent ?? 0;
   const memoryPercent = systemStats?.memory?.percent ?? 0;
@@ -26,10 +26,19 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.style.colorScheme = theme;
+    document.documentElement.style.colorScheme = theme === 'light' || theme === 'ice' ? 'light' : 'dark';
   }, [theme]);
 
-  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark');
+  useEffect(() => {
+    const handleThemeChange = (event: Event) => {
+      const nextTheme = (event as CustomEvent<string>).detail;
+      if (typeof nextTheme === 'string') setTheme(nextTheme);
+    };
+    window.addEventListener('stariz-theme-change', handleThemeChange);
+    return () => window.removeEventListener('stariz-theme-change', handleThemeChange);
+  }, [setTheme]);
+
+  const toggleTheme = () => setTheme(theme === 'light' || theme === 'ice' ? 'cyber' : 'light');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,7 +96,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
             className="w-full bg-[#0f0f2a] border border-[#1a1a3a] rounded-lg pl-10 pr-10 py-2 text-sm text-white placeholder:text-[#00f0ff]/30 focus:outline-none focus:border-[#00f0ff]/50 focus:shadow-[0_0_15px_#00f0ff22] transition-all font-mono"
           />
-          <button type="button" className="absolute right-3 text-[#00f0ff]/40 hover:text-[#00f0ff]" aria-label="Voice search">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('stariz-navigate', { detail: 'voice' }))}
+            className="absolute right-3 rounded p-1 text-[#00f0ff]/40 hover:bg-[#00f0ff]/10 hover:text-[#00f0ff]"
+            aria-label="Open voice assistant"
+            title="Open voice assistant"
+          >
             <Mic className="w-4 h-4" />
           </button>
         </motion.form>
@@ -110,9 +125,9 @@ export default function Header({ onMenuToggle }: HeaderProps) {
         <button
           onClick={toggleTheme}
           className="hidden md:flex items-center gap-1.5 p-1.5 rounded border border-[#1a1a3a] text-[#ffcc00]/70 hover:text-[#ffcc00] hover:border-[#ffcc00]/30 transition-all"
-          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-label={`Switch to ${theme === 'light' || theme === 'ice' ? 'cyber' : 'light'} mode`}
         >
-          {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          {theme === 'light' || theme === 'ice' ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
         </button>
         <div className="hidden md:flex items-center gap-1.5 text-xs font-mono text-[#a855f7]/70">
           <Volume2 className="w-3.5 h-3.5" />

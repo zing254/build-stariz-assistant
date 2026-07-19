@@ -27,8 +27,14 @@ class FileTools:
         try:
             resolved = Path(path).resolve()
             for base in cls.ALLOWED_BASE_DIRS:
-                if str(resolved).startswith(str(base.resolve())):
+                base_resolved = base.resolve()
+                # Path-prefix checks are unsafe (`/home/user2` would match
+                # `/home/user`). `relative_to` enforces a directory boundary.
+                try:
+                    resolved.relative_to(base_resolved)
                     return True, ""
+                except ValueError:
+                    continue
             return False, f"Access denied: path outside allowed directories ({path})"
         except Exception as e:
             return False, f"Path validation error: {str(e)}"

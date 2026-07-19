@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Terminal } from 'lucide-react';
+import { evaluateMathExpression } from '../../../utils/helpers';
 
 export function TerminalWidget() {
   const [history, setHistory] = useState<Array<{ type: 'input' | 'output'; text: string; color?: string }>>([
@@ -30,8 +31,7 @@ export function TerminalWidget() {
     calc: () => {
       try {
         const expr = input.replace(/^calc\s*/, '');
-         
-        return String(new Function('return ' + expr)());
+        return String(evaluateMathExpression(expr));
       } catch { return 'Invalid expression'; }
     },
   };

@@ -7,6 +7,8 @@ import {
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { toast } from '../Toast';
 
+const BACKEND_URL = import.meta.env.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
+
 interface FileItem {
   name: string;
   path: string;
@@ -26,7 +28,7 @@ export default function FileManagerWidget() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:8000/api/tools/file/operation', {
+      const response = await fetch(`${BACKEND_URL}/api/tools/file/operation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, operation: 'list' }),
@@ -70,7 +72,7 @@ export default function FileManagerWidget() {
     if (!confirm(`Delete ${item.is_dir ? 'folder' : 'file'} "${item.name}"?`)) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/tools/file/operation', {
+      const response = await fetch(`${BACKEND_URL}/api/tools/file/operation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: item.path, operation: 'delete' }),
@@ -93,7 +95,7 @@ export default function FileManagerWidget() {
 
     const path = `${currentPath}/${newFolderName.trim()}`;
     try {
-      const response = await fetch('http://localhost:8000/api/tools/file/operation', {
+      const response = await fetch(`${BACKEND_URL}/api/tools/file/operation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path, operation: 'mkdir' }),

@@ -28,7 +28,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 import uvicorn
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Add the backend directory to the path so we can import stariz_tools
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -139,12 +139,16 @@ app = FastAPI(
 CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
 if CORS_ORIGINS == "*":
     origins = ["*"]
+    # Browsers reject wildcard origins together with credentials. Credentials
+    # are not needed for the default token-free local mode.
+    cors_credentials = False
 else:
-    origins = CORS_ORIGINS.split(",")
+    origins = [origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()]
+    cors_credentials = True
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=cors_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -162,13 +166,14 @@ async def rate_limit_middleware(request, call_next):
 
     rate_limit_store[client_ip] = [t for t in rate_limit_store[client_ip] if t > window_start]
 
-    if not rate_limit_store[client_ip]:
-        del rate_limit_store[client_ip]
-
-    if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX:
+    # Keep the bucket present after pruning. The previous implementation deleted
+    # an empty bucket and immediately indexed it again, causing a KeyError on
+    # the first request from every client.
+    bucket = rate_limit_store[client_ip]
+    if len(bucket) >= RATE_LIMIT_MAX:
         return JSONResponse(status_code=429, content={"error": "Rate limit exceeded"})
 
-    rate_limit_store[client_ip].append(now)
+    bucket.append(now)
     response = await call_next(request)
     return response
 
@@ -342,7 +347,7 @@ manager = ConnectionManager()
 async def root():
     return {
         "service": "STARIZ AI Backend",
-        "version": "2.4.1",
+        "version": "3.0.0",
         "status": "operational",
         "timestamp": datetime.now().isoformat(),
     }
@@ -350,7 +355,39 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "service": "stariz-backend", "version": "3.0.0"}
+
+
+@app.get("/api/capabilities")
+async def capabilities():
+    """Report optional backend capabilities without forcing heavy startup."""
+    ollama = False
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=1.5) as client:
+            response = await client.get(os.environ.get("OLLAMA_URL", "http://localhost:11434"))
+            ollama = response.status_code < 500
+    except Exception:
+        pass
+
+    try:
+        from stariz_tools.voice_tools import VoiceTools
+        voice_stt = VoiceTools._vosk_model is not None
+        voice_tts = VoiceTools._piper_voice is not None
+    except Exception:
+        voice_stt = False
+        voice_tts = False
+
+    return {
+        "ai": True,
+        "ollama": ollama,
+        "voice_stt": voice_stt,
+        "voice_tts": voice_tts,
+        "rag": rag_engine is not None,
+        "memory": memory_system is not None,
+        "agent": True,
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 @app.get("/api/system/stats")
@@ -463,10 +500,10 @@ async def ping_host(host: str, count: int = 4):
 
 # File Tools
 class FileOperationRequest(BaseModel):
-    path: str
-    operation: str  # list, read, write, delete, exists, mkdir, info
-    content: Optional[str] = None
-    encoding: Optional[str] = "utf-8"
+    path: str = Field(min_length=1, max_length=4096)
+    operation: str = Field(min_length=1, max_length=32)  # list, read, write, delete, mkdir, info
+    content: Optional[str] = Field(default=None, max_length=10_000_000)
+    encoding: Optional[str] = Field(default="utf-8", max_length=64)
 
 
 @app.post("/api/tools/file/operation")
@@ -783,9 +820,9 @@ def get_ai_core():
     return ai_core
 
 class AIChatRequest(BaseModel):
-    message: str
+    message: str = Field(min_length=1, max_length=20_000)
     use_rag: bool = True
-    model: Optional[str] = None
+    model: Optional[str] = Field(default=None, max_length=256)
 
 @app.post("/api/ai/chat")
 async def ai_chat(request: AIChatRequest):
@@ -923,8 +960,8 @@ async def logs_clear(source: Optional[str] = None):
 
 # --- Agent API ---
 class AgentExecuteRequest(BaseModel):
-    task: str
-    max_iterations: int = 5
+    task: str = Field(min_length=1, max_length=10_000)
+    max_iterations: int = Field(default=5, ge=1, le=20)
 
 @app.post("/api/agent/execute")
 async def agent_execute(request: AgentExecuteRequest):
@@ -971,8 +1008,8 @@ async def agent_execute(request: AgentExecuteRequest):
             import httpx as _httpx
             with _httpx.Client(timeout=120) as _client:
                 resp = _client.post(
-                    "http://localhost:11434/api/chat",
-                    json={"model": "Tinyllama:latest", "messages": [{"role": "user", "content": prompt}], "stream": False},
+                    f"{os.environ.get('OLLAMA_URL', 'http://localhost:11434')}/api/chat",
+                    json={"model": os.environ.get('STARIZ_MODEL', 'qwen3:4b'), "messages": [{"role": "user", "content": prompt}], "stream": False},
                 )
                 return resp.json().get("message", {}).get("content", "")
         except Exception as e:

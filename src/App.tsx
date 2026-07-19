@@ -59,6 +59,7 @@ const AIChatUnified = React.lazy(() => import('./components/AIChatUnified').then
 const LogViewer = React.lazy(() => import('./components/LogViewer').then(m => ({ default: m.default })));
 const BootSequence = React.lazy(() => import('./components/BootSequence').then(m => ({ default: m.default })));
 const VoiceAssistantEnhanced = React.lazy(() => import('./components/VoiceAssistantEnhanced').then(m => ({ default: m.default })));
+const SystemHealth = React.lazy(() => import('./components/SystemHealth').then(m => ({ default: m.default })));
 
 const Skeleton = () => <div className="skeleton h-full rounded-lg bg-[#0f0f2a]/50 animate-pulse" />;
 
@@ -242,6 +243,17 @@ export default function App() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  // Voice commands and header actions can navigate without coupling child
+  // components to the router/state that owns the active view.
+  useEffect(() => {
+    const handleNavigate = (event: Event) => {
+      const tab = (event as CustomEvent<string>).detail;
+      if (typeof tab === 'string' && tab.trim()) setActiveTab(tab);
+    };
+    window.addEventListener('stariz-navigate', handleNavigate);
+    return () => window.removeEventListener('stariz-navigate', handleNavigate);
+  }, []);
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {});
@@ -261,6 +273,7 @@ export default function App() {
         case 'chat-classic': return <ChatUnifiedView />;
         case 'chat-enhanced': return <ChatUnifiedView />;
        case 'voice': return wrapView(VoiceAssistantEnhanced)();
+       case 'health': return wrapView(SystemHealth, 'max-w-5xl')();
        case 'whiteboard': return <WhiteboardView />;
        case 'journal': return <JournalView />;
        case 'widgets': return <WidgetManagerView />;

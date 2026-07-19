@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { parseMarkdown, formatMarkdownSimple } from '../utils/markdown.tsx';
-import { formatTime, formatDate, getGreeting, generateId, generatePassword, generateUUID, generateLorem } from '../utils/helpers';
+import { formatTime, formatDate, getGreeting, generateId, generatePassword, generateUUID, generateLorem, evaluateMathExpression } from '../utils/helpers';
 
 describe('Markdown Parser', () => {
   it('should handle bold text', () => {
@@ -132,5 +132,16 @@ describe('Helper Functions', () => {
     const lorem = generateLorem(2);
     expect(lorem.length).toBeGreaterThan(0);
     expect(lorem.split('\n\n').length).toBe(2);
+  });
+});
+
+describe('Safe math evaluator', () => {
+  it('respects operator precedence and parentheses', () => {
+    expect(evaluateMathExpression('2 + 3 * (4 - 1)')).toBe(11);
+  });
+
+  it('rejects non-arithmetic input and division by zero', () => {
+    expect(() => evaluateMathExpression('alert(1)')).toThrow();
+    expect(() => evaluateMathExpression('10 / 0')).toThrow();
   });
 });

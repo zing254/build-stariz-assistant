@@ -9,6 +9,10 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import { copyToClipboard } from '../utils/helpers';
 import { toast } from './Toast';
 import soundManager from '../utils/sounds';
+import { getStoredApiConfig } from './ApiKeyManager';
+
+const BACKEND_URL = import.meta.env.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
+const VOICE_SYSTEM_PROMPT = 'You are STARIZ, a concise and helpful voice assistant. Answer naturally in plain text, without markdown, so your response can be spoken aloud.';
 
 interface VoiceMessage {
   id: string;
@@ -306,9 +310,24 @@ export default function VoiceAssistantEnhanced() {
       } catch {}
     }
 
-    // Weather (would need API call - simulated)
+    // Weather: use the same live Open-Meteo source as the dashboard when the
+    // browser grants location access, with a clear fallback when it does not.
     if (lower.includes('weather')) {
-      return 'The weather is currently 72 degrees and partly cloudy. Weather data requires an internet connection for real-time updates.';
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          if (!navigator.geolocation) return reject(new Error('Location unavailable'));
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        const { latitude, longitude } = position.coords;
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`);
+        if (response.ok) {
+          const data = await response.json();
+          const code = data.current?.weather_code;
+          const description = code === 0 ? 'clear skies' : code <= 3 ? 'partly cloudy skies' : code <= 67 ? 'rain nearby' : 'mixed weather';
+          return `It is ${Math.round(data.current.temperature_2m)} degrees with ${description}. Wind is ${Math.round(data.current.wind_speed_10m)} kilometers per hour.`;
+        }
+      } catch { /* fall through to an honest offline response */ }
+      return 'I cannot access live weather right now. Enable location permission or open the Weather widget to choose a city.';
     }
 
     // Jokes
@@ -341,8 +360,44 @@ export default function VoiceAssistantEnhanced() {
       return 'Message history cleared.';
     }
 
-    // Default response
-    return `I heard: "${input}". I'm processing your request through the neural network. You can ask me about time, date, system status, or try commands like "open calendar" or "add task buy groceries".`;
+    // Send non-command questions to the configured AI instead of returning a
+    // canned sentence. This keeps voice and chat on the same assistant.
+    try {
+      const config = getStoredApiConfig();
+      if (config && ['openrouter', 'openai', 'custom'].includes(config.provider)) {
+        const response = await fetch(`${config.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.key}`,
+            ...(config.provider === 'openrouter' ? { 'HTTP-Referer': window.location.origin, 'X-Title': 'STARIZ AI' } : {}),
+          },
+          body: JSON.stringify({
+            model: config.model,
+            messages: [{ role: 'system', content: VOICE_SYSTEM_PROMPT }, { role: 'user', content: input }],
+            max_tokens: 500,
+            temperature: 0.7,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error?.message || `AI request failed (${response.status})`);
+        const answer = data.choices?.[0]?.message?.content?.trim();
+        if (answer) return answer;
+      }
+
+      // Backend fallback uses local Ollama when it is available.
+      const response = await fetch(`${BACKEND_URL}/api/ai/chat/nonstream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input, use_rag: true }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.response) return String(data.response);
+    } catch (error) {
+      console.warn('Voice AI request failed; using offline response:', error);
+    }
+
+    return `I heard: "${input}". Configure an OpenRouter key in API settings, or start the STARIZ backend with Ollama for full AI voice responses.`;
   };
 
   const startListening = () => {

@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Shield, Eye, EyeOff, Copy } from 'lucide-react';
 import { generatePassword, copyToClipboard } from '../../../utils/helpers';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { toast } from '../../Toast';
 
 export function PasswordWidget() {
-  const [password, setPassword] = useState('');
   const [length, setLength] = useState(16);
   const [opts, setOpts] = useState({ upper: true, lower: true, numbers: true, symbols: true });
+  const [password, setPassword] = useState(() => generatePassword(16, { upper: true, lower: true, numbers: true, symbols: true }));
   const [visible, setVisible] = useState(false);
   const [history, setHistory] = useLocalStorage<string[]>('stariz-passwords', []);
 
@@ -16,8 +16,6 @@ export function PasswordWidget() {
     setPassword(pwd);
     setHistory([pwd, ...history].slice(0, 10));
   };
-
-  useEffect(() => { generate(); }, []);
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(password);

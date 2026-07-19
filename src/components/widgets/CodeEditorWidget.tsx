@@ -92,14 +92,39 @@ export default function CodeEditorWidget() {
       return;
     }
 
-    try {
-      // Create a sandboxed execution
-      const result = new Function(content)();
-      toast.success('Code executed successfully');
-      console.log('Code output:', result);
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    }
+    // Execute JavaScript in a DOM-less Worker with a hard timeout instead of
+    // evaluating it in the application window.
+    const workerSource = `self.onmessage = function(event) {
+      try {
+        const logs = [];
+        const originalLog = console.log;
+        console.log = (...args) => logs.push(args.map(String).join(' '));
+        const result = (function() { ${content} })();
+        originalLog.call(console, JSON.stringify({ ok: true, result: result === undefined ? '' : String(result), logs }));
+      } catch (error) {
+        console.log(JSON.stringify({ ok: false, error: error && error.message ? error.message : String(error) }));
+      }
+    };`;
+    const worker = new Worker(URL.createObjectURL(new Blob([workerSource], { type: 'application/javascript' })));
+    const timeout = window.setTimeout(() => {
+      worker.terminate();
+      toast.error('Execution stopped after 2 seconds');
+    }, 2000);
+    worker.onmessage = (event) => {
+      window.clearTimeout(timeout);
+      worker.terminate();
+      try {
+        const result = JSON.parse(event.data);
+        if (!result.ok) toast.error(`Error: ${result.error}`);
+        else toast.success(result.logs?.length ? `Output: ${result.logs.join(' | ')}` : 'Code executed successfully');
+      } catch { toast.error('Execution returned an unreadable result'); }
+    };
+    worker.onerror = (error) => {
+      window.clearTimeout(timeout);
+      worker.terminate();
+      toast.error(`Execution error: ${error.message || 'unknown error'}`);
+    };
+    worker.postMessage(null);
   };
 
   const copyContent = async () => {

@@ -23,7 +23,7 @@ const SIZE_ICONS = {
 };
 
 export default function WidgetManager() {
-  const { widgets, moveWidget, toggleVisibility, cycleSize, resetLayout } = useWidgetLayout();
+  const { widgets, reorderWidgets, toggleVisibility, cycleSize, resetLayout } = useWidgetLayout();
 
   return (
     <div className="h-full flex flex-col">
@@ -49,15 +49,7 @@ export default function WidgetManager() {
         <Reorder.Group
           axis="y"
           values={widgets}
-          onReorder={(newOrder) => {
-            // Map back to move operations
-            newOrder.forEach((widget, index) => {
-              const oldIndex = widgets.findIndex((w) => w.id === widget.id);
-              if (oldIndex !== index) {
-                moveWidget(oldIndex, index);
-              }
-            });
-          }}
+          onReorder={reorderWidgets}
           className="space-y-1"
         >
           {widgets.map((widget) => {

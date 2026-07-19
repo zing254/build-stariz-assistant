@@ -118,7 +118,7 @@ export const exportData = () => {
   const data: Record<string, unknown> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('stariz-')) {
+    if (key && key.startsWith('stariz-') && key !== 'stariz-api-config') {
       try {
         data[key] = JSON.parse(localStorage.getItem(key) || 'null');
       } catch {
@@ -141,7 +141,14 @@ export const importData = (file: File): Promise<boolean> => {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          resolve(false);
+          return;
+        }
         Object.entries(data).forEach(([key, value]) => {
+          // Backups are local application data only. Never import credentials,
+          // arbitrary storage keys, or executable-looking values.
+          if (!key.startsWith('stariz-') || key === 'stariz-api-config') return;
           localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
         });
         resolve(true);
@@ -175,6 +182,52 @@ export const generatePassword = (length = 16, options = { upper: true, lower: tr
     password += pool[array[i] % pool.length];
   }
   return password;
+};
+
+/** Evaluate basic arithmetic without executing JavaScript. */
+export const evaluateMathExpression = (expression: string): number => {
+  const source = expression.replace(/\s+/g, '');
+  if (!source || !/^[0-9+\-*/%().]+$/.test(source)) throw new Error('Only arithmetic characters are allowed');
+  let index = 0;
+  const peek = () => source[index] || '';
+  const consume = () => source[index++];
+  const parseNumber = (): number => {
+    const start = index;
+    while (/\d|\./.test(peek())) consume();
+    const value = Number(source.slice(start, index));
+    if (!Number.isFinite(value)) throw new Error('Invalid number');
+    return value;
+  };
+  const parseFactor = (): number => {
+    if (peek() === '+') { consume(); return parseFactor(); }
+    if (peek() === '-') { consume(); return -parseFactor(); }
+    if (peek() === '(') {
+      consume(); const value = parseExpression();
+      if (consume() !== ')') throw new Error('Missing closing parenthesis');
+      return value;
+    }
+    return parseNumber();
+  };
+  const parseTerm = (): number => {
+    let value = parseFactor();
+    while (['*', '/', '%'].includes(peek())) {
+      const operator = consume(); const right = parseFactor();
+      if ((operator === '/' || operator === '%') && right === 0) throw new Error('Cannot divide by zero');
+      value = operator === '*' ? value * right : operator === '/' ? value / right : value % right;
+    }
+    return value;
+  };
+  function parseExpression(): number {
+    let value = parseTerm();
+    while (['+', '-'].includes(peek())) {
+      const operator = consume(); const right = parseTerm();
+      value = operator === '+' ? value + right : value - right;
+    }
+    return value;
+  }
+  const result = parseExpression();
+  if (index !== source.length || !Number.isFinite(result)) throw new Error('Invalid arithmetic expression');
+  return result;
 };
 
 export const generateUUID = () => {

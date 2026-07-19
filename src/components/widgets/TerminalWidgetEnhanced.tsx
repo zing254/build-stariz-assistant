@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Terminal, Play, Trash2, Copy } from 'lucide-react';
 import { toast } from '../Toast';
+import { evaluateMathExpression } from '../../utils/helpers';
+
+const BACKEND_URL = import.meta.env.VITE_PYTHON_BACKEND_URL || 'http://localhost:8000';
 
 interface TerminalLine {
   id: string;
@@ -53,7 +56,7 @@ export default function TerminalWidgetEnhanced() {
       // Try Python backend first
       if (connected) {
         try {
-          const response = await fetch('http://localhost:8000/api/tools/system/info');
+          const response = await fetch(`${BACKEND_URL}/api/tools/system/info`);
           if (response.ok) {
             const data = await response.json();
             if (command === 'connect' || command === 'status') {
@@ -89,9 +92,9 @@ export default function TerminalWidgetEnhanced() {
 
         case 'connect':
           setConnected(true);
-          addLine('system', 'Connecting to Python backend at http://localhost:8000...');
+          addLine('system', 'Connecting to Python backend...');
           try {
-            const response = await fetch('http://localhost:8000/health');
+            const response = await fetch(`${BACKEND_URL}/health`);
             if (response.ok) {
               addLine('output', '✓ Connected to Python backend successfully!');
               addLine('output', 'You now have access to real system commands.');
@@ -141,8 +144,7 @@ export default function TerminalWidgetEnhanced() {
         case 'calc':
           try {
             const expr = args.join(' ');
-            // Safe evaluation using Function constructor
-            const result = new Function('return ' + expr)();
+            const result = evaluateMathExpression(expr);
             addLine('output', `${expr} = ${result}`);
           } catch {
             addLine('error', 'Invalid expression');
@@ -156,7 +158,7 @@ export default function TerminalWidgetEnhanced() {
           } else {
             const path = args[0] || '.';
             try {
-              const response = await fetch('http://localhost:8000/api/tools/file/operation', {
+              const response = await fetch(`${BACKEND_URL}/api/tools/file/operation`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ path, operation: 'list' }),
@@ -188,7 +190,7 @@ export default function TerminalWidgetEnhanced() {
             addLine('system', `Pinging ${host}...`);
             try {
               const response = await fetch(
-                `http://localhost:8000/api/tools/system/ping/${host}?count=2`,
+                `${BACKEND_URL}/api/tools/system/ping/${host}?count=2`,
                 { method: 'GET' }
               );
               const data = await response.json();

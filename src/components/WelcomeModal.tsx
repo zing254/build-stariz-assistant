@@ -39,7 +39,7 @@ export default function WelcomeModal() {
   const features = [
     { icon: Zap, title: '24+ Live Widgets', desc: 'Real-time weather, crypto, system monitoring, and more.', color: '#00f0ff' },
     { icon: Shield, title: 'Local-First Data', desc: 'All your data stays in your browser. Export & import anytime.', color: '#00ff88' },
-    { icon: Globe, title: 'Zero API Keys', desc: 'Works out of the box with free public APIs. No setup needed.', color: '#a855f7' },
+    { icon: Globe, title: 'Local-First AI', desc: 'Use free public APIs, OpenRouter, or local Ollama with clear setup guidance.', color: '#a855f7' },
     { icon: Sparkles, title: 'Keyboard Driven', desc: 'Press Ctrl+/ or ? to see all shortcuts. Work faster.', color: '#ffcc00' },
   ];
 
@@ -78,7 +78,7 @@ export default function WelcomeModal() {
                   <h1 className="font-display font-bold text-2xl text-white tracking-wider">
                     STARIZ<span className="text-[#00f0ff]">.</span>AI
                   </h1>
-                  <p className="text-xs font-mono text-[#00f0ff]/60">v2.4.1 — Personal Command Center</p>
+                  <p className="text-xs font-mono text-[#00f0ff]/60">v3.0.0 — Personal Command Center</p>
                 </div>
               </div>
 

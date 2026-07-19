@@ -44,10 +44,20 @@ export function useWidgetLayout() {
 
   const moveWidget = useCallback((fromIndex: number, toIndex: number) => {
     setWidgets((prev) => {
+      if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= prev.length || toIndex >= prev.length) return prev;
       const next = [...prev];
       const [removed] = next.splice(fromIndex, 1);
       next.splice(toIndex, 0, removed);
       return next;
+    });
+  }, [setWidgets]);
+
+  const reorderWidgets = useCallback((nextOrder: WidgetConfig[]) => {
+    setWidgets((prev) => {
+      const knownIds = new Set(prev.map((widget) => widget.id));
+      const reordered = nextOrder.filter((widget) => knownIds.has(widget.id));
+      const missing = prev.filter((widget) => !reordered.some((item) => item.id === widget.id));
+      return [...reordered, ...missing];
     });
   }, [setWidgets]);
 
@@ -80,6 +90,7 @@ export function useWidgetLayout() {
     editMode,
     setEditMode,
     moveWidget,
+    reorderWidgets,
     toggleVisibility,
     toggleExpanded,
     cycleSize,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Lock, Unlock, EyeOff, Activity, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, Unlock, EyeOff, Activity } from 'lucide-react';
 import { toast } from '../../Toast';
 
 export function SecurityWidget() {

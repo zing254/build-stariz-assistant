@@ -16,7 +16,7 @@
     --accent-yellow: #ffcc00;
   }
 
-  [data-theme="light"] {
+  [data-theme="light"], [data-theme="ice"] {
     --bg-primary: #f5f5f5;
     --bg-secondary: #ffffff;
     --bg-tertiary: #e8e8f0;
@@ -30,8 +30,33 @@
     --accent-green: #00aa55;
     --accent-yellow: #cc9900;
   }
+
+  [data-theme="matrix"] {
+    --accent-cyan: #00ff88;
+    --accent-pink: #00cc66;
+    --accent-purple: #22c55e;
+    --accent-green: #00ff00;
+    --accent-yellow: #a3e635;
+  }
+
+  [data-theme="sunset"] {
+    --accent-cyan: #ff9966;
+    --accent-pink: #ff4d6d;
+    --accent-purple: #c084fc;
+    --accent-green: #fbbf24;
+    --accent-yellow: #ffd166;
+  }
   html {
     scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 
   body {
@@ -195,10 +220,60 @@
   transition: all 0.2s ease-in;
 }
 
-/* Widget Grid */
+/* Responsive widget grid. Every card gets a safe minimum width and grows
+   with its content, so controls never collide or spill over one another. */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.dashboard-item {
+  min-width: 0;
+  min-height: 0;
+}
+
+.dashboard-item > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-item-medium,
+.dashboard-item-large,
+.dashboard-item-expanded {
+  grid-column: span 1;
+}
+
+@media (min-width: 900px) {
+  .dashboard-item-medium,
+  .dashboard-item-large {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dashboard-item-large {
+    grid-column: span 2;
+  }
+}
+
+.dashboard-item-expanded {
+  grid-column: 1 / -1;
+}
+
+.dashboard-action {
+  @apply inline-flex items-center gap-1.5 rounded-lg border border-[#1a1a3a] bg-[#0f0f2a] px-2.5 py-1.5 text-[10px] font-mono text-white/55 transition-colors hover:border-[#00f0ff]/40 hover:text-[#00f0ff];
+}
+
+.dashboard-action-active {
+  @apply border-[#00f0ff]/40 bg-[#00f0ff]/10 text-[#00f0ff];
+}
+
+/* Keep dense widget internals usable on phones. */
 .widget-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 1rem;
 }
 
@@ -278,6 +353,15 @@
 }
 
 /* Mobile Bottom Nav */
+@media (max-width: 767px) {
+  .mobile-safe-bottom {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
 @media (max-width: 768px) {
   .mobile-nav {
     @apply fixed bottom-0 left-0 right-0 bg-[#0a0a1a]/90 backdrop-blur-md border-t border-[#1a1a3a] z-50;

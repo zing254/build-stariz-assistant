@@ -94,12 +94,13 @@ export class AIService {
   ): Promise<AIServiceResponse> {
     const { temperature = 0.7 } = options;
 
-    // Check if we should use offline mode
-    const isOnline = await this.isOnline();
+    // The configured provider is the source of truth. A separate ipify
+    // connectivity probe caused valid API configurations to be ignored on
+    // networks that block that probe.
     const ollamaAvailable = await this.isOllamaAvailable();
 
-    // Prefer Ollama when offline or explicitly chosen
-    if (!isOnline || (ollamaAvailable && !this.currentApiConfig)) {
+    // Prefer local Ollama only when no browser/API provider is configured.
+    if (ollamaAvailable && !this.currentApiConfig) {
       try {
         const response = await this.ollama.generateResponse(
           'qwen3:4b',
@@ -119,16 +120,13 @@ export class AIService {
         };
       } catch (error) {
         console.error('Ollama generation failed:', error);
-        // Fall back to API if available
-        if (isOnline && this.currentApiConfig) {
-          return this.generateApiResponse(prompt, systemPrompt, options);
-        }
         throw error instanceof Error ? error : new Error(String(error));
       }
     }
 
-    // Use API when online and configured
-    if (isOnline && this.currentApiConfig) {
+    // Use the configured API directly; the request itself provides the
+    // authoritative connectivity/error result.
+    if (this.currentApiConfig) {
       return this.generateApiResponse(prompt, systemPrompt, options);
     }
 
@@ -298,12 +296,10 @@ export class AIService {
   ) {
     const { temperature = 0.7 } = options;
 
-    // Check if we should use offline mode
-    const isOnline = await this.isOnline();
     const ollamaAvailable = await this.isOllamaAvailable();
 
-    // Prefer Ollama when offline
-    if (!isOnline || (ollamaAvailable && !this.currentApiConfig)) {
+    // Prefer local Ollama only when no API provider is configured.
+    if (ollamaAvailable && !this.currentApiConfig) {
       this.ollama.generateStreamingResponse(
         'qwen3:4b',
         prompt,
@@ -328,7 +324,7 @@ export class AIService {
 
     // For API streaming, we'd implement similar logic per provider
     // For now, fall back to non-streaming if API is selected
-    if (isOnline && this.currentApiConfig) {
+    if (this.currentApiConfig) {
       try {
         const response = await this.generateApiResponse(
           prompt,

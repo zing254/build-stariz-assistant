@@ -44,6 +44,7 @@ export default function CommandPalette({ isOpen, onClose, onNavigate }: CommandP
     { id: 'nav-files', label: 'File Manager', description: 'Browse files with Python backend', icon: FileText, action: () => onNavigate('files'), category: 'Navigation' },
     { id: 'nav-code', label: 'Code Editor', description: 'Multi-file code editor', icon: Code, action: () => onNavigate('code'), category: 'Navigation' },
     { id: 'nav-system', label: 'System Monitor', description: 'Real-time system stats', icon: Zap, action: () => onNavigate('system'), category: 'Navigation' },
+    { id: 'nav-health', label: 'System Health', description: 'Check backend and optional capabilities', icon: Zap, action: () => onNavigate('health'), category: 'Navigation', keywords: ['health', 'diagnostics', 'status'] },
     { id: 'nav-settings', label: 'Settings', description: 'App configuration', icon: Settings, action: () => onNavigate('settings'), category: 'Navigation' },
 
     // Tools

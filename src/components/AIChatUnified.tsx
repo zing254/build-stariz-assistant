@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Send, Bot, User, Trash2, Copy, Check, Sparkles, Database, Search, Info,
-  AlertCircle, StopCircle, Terminal,
+  Send, Bot, User, Trash2, Copy, Sparkles, Database, Search, Info,
+  AlertCircle, StopCircle, Terminal, Mic, MicOff, Volume2, VolumeX,
 } from 'lucide-react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { getStoredApiConfig, type ApiConfig } from './ApiKeyManager';
@@ -87,6 +87,8 @@ export default function AIChatUnified() {
   const [sessionInfo, setSessionInfo] = useState<SessionInfo | null>(null);
   const [ragEnabled, setRagEnabled] = useState(true);
   const [pythonTools, setPythonTools] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isListening, setIsListening] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,6 +96,45 @@ export default function AIChatUnified() {
   const [modelName, setModelName] = useState('STARIZ-AI');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const spokenMessageRef = useRef<string>('');
+
+  const speak = useCallback((text: string) => {
+    if (!voiceEnabled || !('speechSynthesis' in window) || !text.trim()) return;
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/```[\s\S]*?```/g, ' code block ').replace(/[*_#>`~-]/g, '').trim();
+    const utterance = new SpeechSynthesisUtterance(clean.slice(0, 4000));
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+  }, [voiceEnabled]);
+
+  useEffect(() => {
+    if (isGenerating || !voiceEnabled) return;
+    const last = messages[messages.length - 1];
+    if (last?.role === 'assistant' && last.content && last.id !== spokenMessageRef.current) {
+      spokenMessageRef.current = last.id;
+      speak(last.content);
+    }
+  }, [messages, isGenerating, voiceEnabled, speak]);
+
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) { toast.error('Voice input is not supported in this browser'); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+    const recognition = new SpeechRecognition();
+    recognition.lang = navigator.language || 'en-US';
+    recognition.interimResults = true;
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results).map((r: any) => r[0].transcript).join('');
+      setInput(transcript);
+    };
+    recognition.onerror = () => { setIsListening(false); toast.error('Could not access the microphone'); };
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    try { recognition.start(); setIsListening(true); } catch { setIsListening(false); }
+  };
+
+  useEffect(() => () => { recognitionRef.current?.stop(); window.speechSynthesis?.cancel(); }, []);
 
   const { connected: pythonConnected, callTool: callPythonTool } = usePythonBackend();
 
@@ -180,7 +221,10 @@ export default function AIChatUnified() {
     setAbortController(controller);
 
     try {
-      if (backendAvailable) {
+      // A configured browser provider is authoritative. This avoids silently
+      // routing to a running-but-unconfigured backend and then failing when
+      // Ollama is not installed.
+      if (backendAvailable && !apiConfig) {
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -194,6 +238,7 @@ export default function AIChatUnified() {
         if (!reader) throw new Error('No reader');
 
         const decoder = new TextDecoder();
+        let buffer = '';
         let assistantContent = '';
 
         const assistantId = generateId();
@@ -201,21 +246,30 @@ export default function AIChatUnified() {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+          buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
             try {
-              const data = JSON.parse(line.replace('data: ', ''));
+              const data = JSON.parse(line.slice(6));
               if (data.chunk) {
                 assistantContent += data.chunk;
                 setMessages(prev => prev.map(m => m.id === assistantId ? { ...m, content: assistantContent } : m));
               }
-              if (data.done) break;
-            } catch {}
+            } catch {
+              // Ignore malformed keep-alive lines, but preserve incomplete
+              // lines in buffer so network chunk boundaries never lose text.
+            }
           }
+          if (done) break;
+        }
+        if (buffer.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(buffer.slice(6));
+            if (data.chunk) assistantContent += data.chunk;
+          } catch { /* incomplete final event */ }
         }
 
         fetchSessionInfo();
@@ -606,7 +660,7 @@ export default function AIChatUnified() {
           </div>
         )}
 
-        {filteredMessages.map((msg, i) => (
+        {filteredMessages.map((msg) => (
           <motion.div
             key={msg.id}
             initial={{ opacity: 0, y: 10 }}
@@ -708,6 +762,23 @@ export default function AIChatUnified() {
               {input.length}
             </span>
           </div>
+          <button
+            onClick={toggleListening}
+            disabled={!canChat}
+            className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-colors shrink-0 disabled:opacity-30 ${isListening ? 'bg-[#ff3366]/20 border-[#ff3366]/50' : 'bg-[#a855f7]/10 border-[#a855f7]/30 hover:bg-[#a855f7]/20'}`}
+            aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+            title={isListening ? 'Stop voice input' : 'Speak your message'}
+          >
+            {isListening ? <MicOff className="w-4 h-4 text-[#ff3366]" /> : <Mic className="w-4 h-4 text-[#a855f7]" />}
+          </button>
+          <button
+            onClick={() => { setVoiceEnabled((enabled) => !enabled); if (voiceEnabled) window.speechSynthesis?.cancel(); }}
+            className="w-10 h-10 rounded-xl border border-[#1a1a3a] flex items-center justify-center hover:bg-white/10 transition-colors shrink-0"
+            aria-label={voiceEnabled ? 'Mute spoken responses' : 'Enable spoken responses'}
+            title={voiceEnabled ? 'Mute spoken responses' : 'Enable spoken responses'}
+          >
+            {voiceEnabled ? <Volume2 className="w-4 h-4 text-[#00ff88]" /> : <VolumeX className="w-4 h-4 text-white/30" />}
+          </button>
           {isGenerating ? (
             <button
               onClick={stopGeneration}
